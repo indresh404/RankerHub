@@ -83,9 +83,38 @@ export const Profile = () => {
   };
 
   // Handle social link update
-  const handleUpdateSocialLink = async (type, value) => {
+const handleUpdateSocialLink = async (type, value) => {
     if (!user) return;
-    
+
+    // Validate input before updating
+    if (type === "linkedin") {
+      if (value && value.trim()) {
+        const linkedinPattern = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w\-]+\/?$/i;
+        const rawVal = value.trim();
+        const testVal = rawVal.startsWith('http') ? rawVal : 'https://' + rawVal;
+        if (!linkedinPattern.test(testVal)) {
+          setToast({ message: "Invalid LinkedIn URL. Use format: linkedin.com/in/username", type: "error" });
+          return;
+        }
+      }
+    } else if (type === "instagram") {
+      if (value && value.trim()) {
+        const igPattern = /^@?[\w](?!.*?\.{2})[\w.]{1,28}[\w]$/;
+        if (!igPattern.test(value.trim())) {
+          setToast({ message: "Invalid Instagram username.", type: "error" });
+          return;
+        }
+      }
+    } else if (type === "discord") {
+      if (value && value.trim()) {
+        const discordPattern = /^.{3,32}(#\d{4})?$/;
+        if (!discordPattern.test(value.trim())) {
+          setToast({ message: "Invalid Discord username.", type: "error" });
+          return;
+        }
+      }
+    }
+
     setUpdating(true);
     try {
       const userRef = doc(db, "users", user.uid);
