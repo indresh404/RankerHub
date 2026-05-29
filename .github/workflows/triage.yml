@@ -3,7 +3,7 @@ name: Triage Automation
 on:
   issues:
     types: [opened]
-  pull_request:
+  pull_request_target:
     types: [opened]
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
             });
 
       - name: Pull Request Triage
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v9
         with:
           script: |
