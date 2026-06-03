@@ -89,16 +89,23 @@ export const GitRank = () => {
         });
 
         // Assign ranks (pre-sorted at database level)
-        const ranked = users.map((u, i) => ({
+        const rankedInitialUsers = users.map((u, i) => ({
           ...u,
           rank: i + 1
         }));
 
-        setUsersList(ranked);
-        
+        // Only update initial batch, preserve paginated data beyond first 50
+        setUsersList((prevUsers) => {
+          if (prevUsers.length <= 50) {
+            return rankedInitialUsers;
+          }
+          // Keep paginated users and update only the initial batch
+          return [...rankedInitialUsers, ...prevUsers.slice(50)];
+        });
+
         // Setup pagination cursors
         setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === 50); 
+        setHasMore(snapshot.docs.length === 50);
         setLoadingUsers(false);
       },
       (error) => {
