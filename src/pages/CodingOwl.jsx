@@ -1,54 +1,184 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Timer, Plus, Check } from "lucide-react";
+import { 
+  Timer, 
+  Plus, 
+  Check,
+  Play,
+  Pause,
+  RotateCcw,
+  Clock,
+  Flame,
+  Trophy
+} from "lucide-react";
 import { habitCards, weeklyHeatmap } from "../data/streaks";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useAuth } from "../context/AuthContext";
+import { db } from "../lib/firebase";
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  serverTimestamp 
+} from "firebase/firestore";
 
+// --- Pomodoro Session History Hook ---
+function usePomodoroHistory(userId) {
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchSessions = async () => {
+    if (!userId || !db) return;
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, "focusSessions"),
+        where("uid", "==", userId),
+        orderBy("completedAt", "desc")
+      );
+      const snap = await getDocs(q);
+      setSessions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error("Error fetching focus sessions:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSession = async (durationMinutes) => {
+    if (!userId || !db) return;
+    try {
+      await addDoc(collection(db, "focusSessions"), {
+        uid: userId,
+        durationMinutes,
+        completedAt: serverTimestamp(),
+      });
+      fetchSessions(); // refresh
+    } catch (err) {
+      console.error("Error saving focus session:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const totalHours = sessions.reduce((acc, s) => acc + (s.durationMinutes || 25), 0) / 60;
+  const totalSessions = sessions.length;
+
+  return { sessions, loading, saveSession, totalHours, totalSessions };
+}
+
+// --- Pomodoro Timer Component ---
+const POMODORO_DURATION = 25 * 60; // 25 minutes in seconds
+
+function PomodoroTimer({ onSessionComplete }) {
+  const [secondsLeft, setSecondsLeft] = useState(POMODORO_DURATION);
+  const [running, setRunning] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => {
+        setSecondsLeft((s) => {
+          if (s <= 1) {
+            clearInterval(intervalRef.current);
+            setRunning(false);
+            setCompleted(true);
+            onSessionComplete(25);
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [running, onSessionComplete]);
+
+  const reset = () => {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setCompleted(false);
+    setSecondsLeft(POMODORO_DURATION);
+  };
+
+  const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
+  const seconds = (secondsLeft % 60).toString().padStart(2, "0");
+  const progress = ((POMODORO_DURATION - secondsLeft) / POMODORO_DURATION) * 100;
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      {/* Circular progress ring */}
+      <div className="relative w-32 h-32">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8"
+            className="text-slate-200 dark:text-slate-800" />
+          <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" strokeWidth="8"
+            strokeDasharray={`${2 * Math.PI * 54}`}
+            strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
+            strokeLinecap="round"
+            className={completed ? "text-emerald-500" : "text-orange-500"}
+            style={{ transition: "stroke-dashoffset 1s linear" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-black font-mono text-slate-900 dark:text-white">
+            {minutes}:{seconds}
+          </span>
+          <span className="text-[9px] text-slate-400 font-bold uppercase">
+            {completed ? "Done!" : running ? "Focus" : "Ready"}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setRunning((r) => !r)}
+          disabled={completed}
+          className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all ${
+            completed
+              ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
+              : running
+              ? "bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/25 hover:bg-orange-500/25"
+              : "bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-500/25"
+          }`}
+        >
+          {running ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+          {running ? "Pause" : "Start"}
+        </button>
+        <button
+          onClick={reset}
+          className="p-2 rounded-xl font-bold border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </div>
+
+      {completed && (
+        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
+          ✅ Session saved to Firestore!
+        </span>
+      )}
+    </div>
+  );
+}
+
+// --- Main CodingOwl Component ---
 export const CodingOwl = () => {
-  const { userData } = useAuth();
+  const { user, userData } = useAuth();
   const userName = userData?.name || "Developer";
   const loginStreak = userData?.streak || 0;
   const githubStreak = userData?.githubStreak || 0; // New GitHub Live Streak
   const [habits, setHabits] = useState(habitCards);
-  const [timeLeft, setTimeLeft] = useState(1500); // 25:00 in seconds
-  const [timerActive, setTimerActive] = useState(false);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    if (timerActive) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            setTimerActive(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [timerActive]);
-
-  const toggleTimer = () => {
-    setTimerActive(!timerActive);
-  };
-
-  const resetTimer = () => {
-    setTimerActive(false);
-    setTimeLeft(1500);
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
+  const { sessions, loading, saveSession, totalHours, totalSessions } =
+    usePomodoroHistory(user?.uid);
 
   const toggleHabitComplete = (id) => {
     setHabits(prev => prev.map(habit => {
@@ -98,49 +228,117 @@ export const CodingOwl = () => {
           </div>
         </Card>
 
-        {/* Focus Timer Session Card */}
-        <Card className="p-6 flex flex-col justify-between">
-          <div className="space-y-2">
+        {/* Live Pomodoro Timer */}
+        <Card className="p-6 flex flex-col items-center justify-between gap-4">
+          <div className="w-full space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase">Focus Arena</span>
             <h3 className="text-lg font-extrabold text-slate-950 dark:text-white my-0">
-              Focus Mode Session
+              Pomodoro Timer
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Lock out distractions and log heads-down coding time.
+              25-min focus sessions — saved to your history.
             </p>
           </div>
-
-          {/* Timer visualization */}
-          <div className="my-6 text-center flex flex-col items-center justify-center">
-            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-widest block font-mono">
-              {formatTime(timeLeft)}
-            </span>
-            <span className="text-[10px] text-slate-400 uppercase font-bold mt-1.5 block">
-              Pomodoro Interval
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTimer}
-              className={`flex-1 py-2.5 rounded-xl font-bold border text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-                timerActive 
-                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" 
-                  : "bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white border-orange-500"
-              }`}
-            >
-              <Timer className="w-4 h-4" /> {timerActive ? "Pause Focus" : "Start Focus"}
-            </button>
-            <button
-              onClick={resetTimer}
-              className="px-4 py-2.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-350 hover:bg-slate-200 transition-all text-sm cursor-pointer"
-            >
-              Reset
-            </button>
-          </div>
+          <PomodoroTimer onSessionComplete={saveSession} />
         </Card>
 
       </div>
+
+      {/* Focus Session Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card className="p-5 flex items-center gap-4 border-orange-500/15">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <Clock className="w-5 h-5 text-orange-500" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase">Total Hours Focused</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">
+              {totalHours.toFixed(1)}h
+            </p>
+          </div>
+        </Card>
+        <Card className="p-5 flex items-center gap-4 border-orange-500/15">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <Flame className="w-5 h-5 text-orange-500" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase">Sessions Completed</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">{totalSessions}</p>
+          </div>
+        </Card>
+        <Card className="p-5 flex items-center gap-4 border-orange-500/15">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <Trophy className="w-5 h-5 text-orange-500" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase">Avg. Session Length</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white">
+              {totalSessions > 0 ? `${Math.round((totalHours * 60) / totalSessions)}m` : "—"}
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Session History Log */}
+      <Card className="p-6">
+        <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
+              Session History
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Your recent Pomodoro sessions saved to Firestore.
+            </p>
+          </div>
+          <span className="text-xs font-bold text-orange-500">
+            {loading ? "Loading…" : `${totalSessions} sessions`}
+          </span>
+        </div>
+
+        {!user ? (
+          <p className="py-6 text-center text-sm text-slate-400 font-medium">
+            Sign in with GitHub to track and save your focus sessions.
+          </p>
+        ) : !db ? (
+          <p className="py-6 text-center text-sm text-slate-400 font-medium">
+            Firestore is not configured for this environment.
+          </p>
+        ) : loading ? (
+          <div className="py-6 flex justify-center">
+            <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : sessions.length === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-400 font-medium">
+            No sessions yet — start a Pomodoro to record your first one!
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/40 mt-4">
+            {sessions.slice(0, 10).map((s) => {
+              const date = s.completedAt?.toDate
+                ? s.completedAt.toDate().toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Just now";
+              return (
+                <div key={s.id} className="py-3 flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Timer className="w-3.5 h-3.5 text-orange-500" />
+                    </div>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">{date}</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20">
+                    {s.durationMinutes || 25} min
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
 
       {/* Habits Checklist Grid */}
       <div className="space-y-4">
