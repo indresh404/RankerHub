@@ -26,10 +26,6 @@ const requiredConfigKeys = [
 
 const hasRequiredConfig = requiredConfigKeys.every((key) => Boolean(firebaseConfig[key]));
 
-if (!hasRequiredConfig) {
-  console.warn("Firebase is not configured. Auth, database, analytics, and storage services are disabled for this environment.");
-}
-
 // Initialize Firebase
 const app = hasRequiredConfig ? initializeApp(firebaseConfig) : null;
 
@@ -74,7 +70,7 @@ if (app && typeof window !== "undefined") {
   try {
     analyticsInstance = getAnalytics(app);
   } catch (error) {
-    console.warn("Analytics initialization skipped:", error);
+    // Analytics initialization failed silently
   }
 }
 
@@ -113,9 +109,8 @@ export const signInWithGitHub = async (requestRepoScope = false) => {
       lastLogin: new Date().toISOString(),
     };
     
-    return { user, accessToken, userData, result }; 
+    return { user, accessToken, userData, result };
   } catch (error) {
-    console.error("GitHub sign-in error:", error);
     if (error.code === 'auth/account-exists-with-different-credential') {
       throw new Error('An account already exists with the same email address.', { cause: error });
     }
@@ -136,7 +131,6 @@ export const signOutUser = async () => {
     await signOut(auth);
     return true;
   } catch (error) {
-    console.error("Sign out error:", error);
     throw error;
   }
 };

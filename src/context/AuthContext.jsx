@@ -57,9 +57,8 @@ const checkAndUpdateStreak = async (data, docRef) => {
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints
       });
-      console.log("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
     } catch (err) {
-      console.error("Failed to update streak:", err);
+      // Silent failure for streak updates to avoid exposing internal errors
     }
   }
 };
@@ -105,7 +104,7 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
           }
         }, (error) => {
-          console.error("Real-time profile listener error:", error);
+          // Silent error handling to avoid exposing internal system errors
           setLoading(false);
         });
 
@@ -175,7 +174,6 @@ export const AuthProvider = ({ children }) => {
 
       return authUser;
     } catch (error) {
-      console.error("Login service failure:", error);
       setLoading(false);
       throw error;
     }
@@ -194,7 +192,7 @@ export const AuthProvider = ({ children }) => {
       setIsOnboarding(false);
       setGhAccessToken(null);
     } catch (error) {
-      console.error("Logout failure:", error);
+      // Silent error handling for logout
     } finally {
       setLoading(false);
     }
