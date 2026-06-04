@@ -57,7 +57,7 @@ const checkAndUpdateStreak = async (data, docRef) => {
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints
       });
-    } catch (err) {
+    } catch {
       // Silent failure for streak updates to avoid exposing internal errors
     }
   }
@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }) => {
             setIsOnboarding(true);
             setLoading(false);
           }
-        }, (error) => {
+        }, (_error) => {
           // Silent error handling to avoid exposing internal system errors
           setLoading(false);
         });
@@ -191,7 +191,7 @@ export const AuthProvider = ({ children }) => {
       setUserData(null);
       setIsOnboarding(false);
       setGhAccessToken(null);
-    } catch (error) {
+    } catch {
       // Silent error handling for logout
     } finally {
       setLoading(false);

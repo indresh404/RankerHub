@@ -69,7 +69,7 @@ let analyticsInstance = null;
 if (app && typeof window !== "undefined") {
   try {
     analyticsInstance = getAnalytics(app);
-  } catch (error) {
+  } catch {
     // Analytics initialization failed silently
   }
 }
@@ -127,12 +127,8 @@ export const signOutUser = async () => {
     return true;
   }
 
-  try {
-    await signOut(auth);
-    return true;
-  } catch (error) {
-    throw error;
-  }
+  await signOut(auth);
+  return true;
 };
 
 // Helper function to get current user's token
