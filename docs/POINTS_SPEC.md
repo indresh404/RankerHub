@@ -12,3 +12,4 @@ The GitRank engine audits a connected GitHub account to evaluate real-world deve
 
 ```text
 GitRank Points = (Commits × 2) + (Pull Requests × 5) + (Code Reviews × 10)
+```

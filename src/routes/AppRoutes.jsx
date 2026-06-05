@@ -16,7 +16,7 @@ import Onboarding from "../pages/Onboarding";
 import NotFound from "../pages/NotFound";
 import Achievements from "../pages/Achievements";
 import About from "../pages/About";
-import Terms from "../pages/Terms";    
+import Terms from "../pages/Terms";
 import Privacy from "../pages/Privacy";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 import GlobalModals from "../components/ui/GlobalModals";
@@ -27,7 +27,9 @@ const LoadingScreen = ({ message }) => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#090D1A]">
     <div className="flex flex-col items-center space-y-4">
       <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
-      <span className="text-sm text-slate-400 font-bold tracking-widest uppercase">{message || "Syncing Session..."}</span>
+      <span className="text-sm text-slate-400 font-bold tracking-widest uppercase">
+        {message || "Syncing Session..."}
+      </span>
     </div>
   </div>
 );
@@ -65,7 +67,11 @@ const OnboardingRoute = ({ children }) => {
 
   // Strict guard: if the user's data explicitly says they are complete, OR if isOnboarding is false, redirect.
   // We only allow access if they are explicitly incomplete.
-  if (userData?.onboardingStatus === "complete" || !isOnboarding || (userData && userData.onboardingStatus !== "incomplete")) {
+  if (
+    userData?.onboardingStatus === "complete" ||
+    !isOnboarding ||
+    (userData && userData.onboardingStatus !== "incomplete")
+  ) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -101,7 +107,7 @@ const SettingsPage = () => (
         "Account authentication key scopes",
         "Staging profile visibility toggles",
         "Leaderboard notification email alerts",
-        "Mascot Oliver focus target customization"
+        "Mascot Oliver focus target customization",
       ]}
       estimatedArrival="Q3 2026"
       showHourglass={true}
@@ -130,13 +136,33 @@ export const AppRoutes = () => {
         <Route path="/privacy" element={<Privacy />} />
 
         {/* Public Login page (standalone) - guarded from logged in users */}
-        <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
-        
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <Login />
+            </GuestRoute>
+          }
+        />
+
         {/* Onboarding page (standalone) - guarded so only incomplete profiles see it */}
-        <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
-        
+        <Route
+          path="/onboarding"
+          element={
+            <OnboardingRoute>
+              <Onboarding />
+            </OnboardingRoute>
+          }
+        />
+
         {/* Layout dashboard sub-pages - locked to authenticated & fully onboarded users */}
-        <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/gitrank" element={<GitRank />} />
           <Route path="/dashboard/rankher" element={<RankHer />} />

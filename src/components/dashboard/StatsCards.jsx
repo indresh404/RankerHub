@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Trophy, GitPullRequest, Flame, Award, ArrowUp } from "lucide-react";
-import { query, collection, where, getCountFromServer } from "firebase/firestore";
+import {
+  query,
+  collection,
+  where,
+  getCountFromServer,
+} from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import Card from "../ui/Card";
@@ -19,7 +24,7 @@ export const StatsCards = () => {
       try {
         const q = query(
           collection(db, "users"),
-          where("points.totalPoints", ">", userData.points.totalPoints)
+          where("points.totalPoints", ">", userData.points.totalPoints),
         );
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
@@ -44,7 +49,7 @@ export const StatsCards = () => {
       subtext: rank === "Loading..." ? "Calculating..." : "Live platform rank",
       trend: "up",
       icon: Trophy,
-      color: "text-amber-500 bg-amber-500/10 border-amber-500/20"
+      color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     },
     {
       title: "GitHub Commits",
@@ -52,7 +57,7 @@ export const StatsCards = () => {
       subtext: "Verified contribution commits",
       trend: "up",
       icon: GitPullRequest,
-      color: "text-blue-500 bg-blue-500/10 border-blue-500/20"
+      color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
     },
     {
       title: "Active Streak",
@@ -60,7 +65,7 @@ export const StatsCards = () => {
       subtext: streak > 5 ? "You're on fire! 🦉🔥" : "Daily streak active",
       trend: "stable",
       icon: Flame,
-      color: "text-orange-500 bg-orange-500/10 border-orange-500/20"
+      color: "text-orange-500 bg-orange-500/10 border-orange-500/20",
     },
     {
       title: "Global Points",
@@ -68,8 +73,8 @@ export const StatsCards = () => {
       subtext: `Rank points: ${userData?.points?.gitRankPoints || 0} Git + ${userData?.points?.referralPoints || 0} Ref`,
       trend: "up",
       icon: Award,
-      color: "text-purple-500 bg-purple-500/10 border-purple-500/20"
-    }
+      color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+    },
   ];
 
   return (
@@ -88,7 +93,7 @@ export const StatsCards = () => {
           >
             {/* Background Accent Gradient Hover */}
             <div className="absolute inset-0 bg-gradient-to-br from-violet-600/0 via-indigo-600/0 to-blue-600/0 group-hover:to-indigo-500/5 dark:group-hover:to-indigo-500/5 transition-all duration-300 pointer-events-none" />
-            
+
             <div className="space-y-2">
               <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 {stat.title}
@@ -108,7 +113,9 @@ export const StatsCards = () => {
               </p>
             </div>
 
-            <div className={`p-3.5 rounded-xl border ${stat.color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300`}>
+            <div
+              className={`p-3.5 rounded-xl border ${stat.color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-300`}
+            >
               <IconComponent className="w-6 h-6" />
             </div>
           </Card>

@@ -14,24 +14,24 @@ RankerHub is a developer ranking and coding platform that helps students and dev
 
 ## ✨ Features
 
-* 🔐 GitHub Authentication
-* 🏆 GitHub Contribution Rankings
-* 👩 RankHer – Female Developer Leaderboard
-* 💻 Coding Theory + Practical Questions
-* 🎖️ Badge & Achievement System
-* 🔥 Daily Activity Streaks
-* 🏫 College-based Rankings
-* 👤 Developer Profiles
-* 📊 Community Leaderboards
+- 🔐 GitHub Authentication
+- 🏆 GitHub Contribution Rankings
+- 👩 RankHer – Female Developer Leaderboard
+- 💻 Coding Theory + Practical Questions
+- 🎖️ Badge & Achievement System
+- 🔥 Daily Activity Streaks
+- 🏫 College-based Rankings
+- 👤 Developer Profiles
+- 📊 Community Leaderboards
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Frontend**: React + Vite
-* **Styling**: Tailwind CSS
-* **Database & Auth**: Firebase Auth & Firestore Database
-* **Integration**: GitHub API
+- **Frontend**: React + Vite
+- **Styling**: Tailwind CSS
+- **Database & Auth**: Firebase Auth & Firestore Database
+- **Integration**: GitHub API
 
 ---
 
@@ -40,18 +40,21 @@ RankerHub is a developer ranking and coding platform that helps students and dev
 To set up RankerHub locally on your machine, follow these steps:
 
 1. **Clone the Repository**:
+
    ```bash
    git clone https://github.com/indresh404/RankerHub.git
    cd RankerHub
    ```
 
 2. **Install Dependencies**:
+
    ```bash
    npm install
    ```
 
 3. **Configure Environment Variables**:
    Create a `.env` file in the root directory and add your Firebase credentials:
+
    ```env
    VITE_FIREBASE_API_KEY=your_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -84,22 +87,24 @@ To set up RankerHub locally on your machine, follow these steps:
 If you see errors like `Firebase config error: apiKey is missing` or `FirebaseError: Firebase: Error (auth/invalid-api-key)` in production, this is due to how Vite compiles environment variables.
 
 ### The Problem
-* The `.env` file containing your keys is excluded from git (`.gitignore`).
-* When the project builds on a production deployment server (such as **GitHub Actions** for Firebase Hosting), Vite cannot read the `.env` file, and compiles the bundle with `undefined` values.
+
+- The `.env` file containing your keys is excluded from git (`.gitignore`).
+- When the project builds on a production deployment server (such as **GitHub Actions** for Firebase Hosting), Vite cannot read the `.env` file, and compiles the bundle with `undefined` values.
 
 ### The Solution (For Firebase Hosting via GitHub Actions)
+
 To fix this, you must feed the environment variables to the GitHub Actions build pipeline:
 
 1. **Add Repository Secrets to GitHub**:
    - Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions**.
    - Under **Repository secrets**, click **New repository secret** and add each variable:
-     * `VITE_FIREBASE_API_KEY`
-     * `VITE_FIREBASE_AUTH_DOMAIN`
-     * `VITE_FIREBASE_PROJECT_ID`
-     * `VITE_FIREBASE_STORAGE_BUCKET`
-     * `VITE_FIREBASE_MESSAGING_SENDER_ID`
-     * `VITE_FIREBASE_APP_ID`
-     * `VITE_FIREBASE_MEASUREMENT_ID`
+     - `VITE_FIREBASE_API_KEY`
+     - `VITE_FIREBASE_AUTH_DOMAIN`
+     - `VITE_FIREBASE_PROJECT_ID`
+     - `VITE_FIREBASE_STORAGE_BUCKET`
+     - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+     - `VITE_FIREBASE_APP_ID`
+     - `VITE_FIREBASE_MEASUREMENT_ID`
 
 2. **Workflows Update**:
    Our deployment workflows in [.github/workflows/firebase-hosting-merge.yml](.github/workflows/firebase-hosting-merge.yml) and [.github/workflows/firebase-hosting-pull-request.yml](.github/workflows/firebase-hosting-pull-request.yml) are set up to pass these secrets into Vite during the build phase:
@@ -115,11 +120,11 @@ To fix this, you must feed the environment variables to the GitHub Actions build
 
 ## 🚀 Future Plans
 
-* Real-time coding contests
-* AI-powered coding insights
-* Multi-language compiler support
-* Advanced leaderboard algorithms
-* Open-source contribution scoring
+- Real-time coding contests
+- AI-powered coding insights
+- Multi-language compiler support
+- Advanced leaderboard algorithms
+- Open-source contribution scoring
 
 ---
 

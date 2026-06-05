@@ -12,7 +12,6 @@ export const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-
   // Extract referral parameters from URL (e.g. ?ref=NEWCODE or #/login?ref=NEWCODE)
   useEffect(() => {
     const getQueryParam = (name) => {
@@ -50,14 +49,15 @@ export const Login = () => {
       // or /dashboard once AuthContext resolves the user's onboarding status.
     } catch (error) {
       console.error("GitHub sign-in error:", error);
-      setError(error.message || "Failed to sign in with GitHub. Please try again.");
+      setError(
+        error.message || "Failed to sign in with GitHub. Please try again.",
+      );
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-[#090D1A] dark:via-[#0A0F1F] dark:to-[#0B1022] text-slate-900 dark:text-slate-100 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
-
       {/* Light Mode Enhanced Background Orbs */}
       <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-violet-200/40 via-purple-200/30 to-indigo-200/40 dark:from-[#2D1B4E] dark:to-[#1A1A3E] pointer-events-none animate-blob transform-gpu rounded-full blur-3xl" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-tl from-blue-200/40 via-cyan-200/30 to-teal-200/40 dark:from-[#1A2A4E] dark:to-[#0F1A2E] pointer-events-none animate-blob [animation-delay:3s] transform-gpu rounded-full blur-3xl" />
@@ -82,14 +82,15 @@ export const Login = () => {
         className="w-full max-w-md relative z-10"
       >
         <Card className="backdrop-blur-xl bg-white/90 dark:bg-slate-950/40 border border-white/50 dark:border-slate-800/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-2xl p-8 space-y-6 transition-all duration-300 hover:shadow-[0_12px_48px_rgba(139,92,246,0.15)] dark:hover:shadow-2xl">
-
           {/* Back to Home */}
           <div className="flex justify-start -mb-2">
             <Link
               to="/"
               className="group flex items-center gap-1 text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 font-semibold"
             >
-              <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
+              <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">
+                ←
+              </span>
               Back to Home
             </Link>
           </div>
@@ -118,21 +119,26 @@ export const Login = () => {
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 border border-violet-200 dark:border-violet-500/20">
               <Sparkles className="w-3 h-3 text-violet-600 dark:text-violet-400" />
-              <span className="text-[10px] font-bold text-violet-700 dark:text-violet-400">GitRank</span>
+              <span className="text-[10px] font-bold text-violet-700 dark:text-violet-400">
+                GitRank
+              </span>
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 border border-blue-200 dark:border-blue-500/20">
               <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400">CodingVerse</span>
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400">
+                CodingVerse
+              </span>
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-500/10 dark:to-amber-500/10 border border-orange-200 dark:border-orange-500/20">
               <Sparkles className="w-3 h-3 text-orange-600 dark:text-orange-400" />
-              <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400">CodingOwl</span>
+              <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400">
+                CodingOwl
+              </span>
             </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleGithubSignIn} className="space-y-5 pt-2">
-
             {/* Error Message - Enhanced */}
             {error && (
               <motion.div
@@ -141,7 +147,9 @@ export const Login = () => {
                 className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-red-50 to-rose-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
               >
                 <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 dark:text-red-400 font-medium flex-1">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-400 font-medium flex-1">
+                  {error}
+                </p>
                 <button
                   onClick={() => setError("")}
                   className="text-red-500 hover:text-red-700 dark:text-red-400 text-xs font-bold"
@@ -205,17 +213,26 @@ export const Login = () => {
           <div className="text-center pt-4 space-y-2 border-t border-slate-200/50 dark:border-slate-800/50">
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
               By continuing, you agree to RankerHub's
-              <Link to="/terms" className="text-violet-600 dark:text-violet-400 font-bold hover:underline mx-1">Terms</Link>
-              <Link to="/privacy" className="text-violet-600 dark:text-violet-400 font-bold hover:underline ml-1">Privacy Policy</Link>
+              <Link
+                to="/terms"
+                className="text-violet-600 dark:text-violet-400 font-bold hover:underline mx-1"
+              >
+                Terms
+              </Link>
+              <Link
+                to="/privacy"
+                className="text-violet-600 dark:text-violet-400 font-bold hover:underline ml-1"
+              >
+                Privacy Policy
+              </Link>
             </p>
             <p className="text-[10px] text-slate-500 dark:text-slate-500">
-              🔒 Your GitHub data is never stored. Only your public profile is used.
+              🔒 Your GitHub data is never stored. Only your public profile is
+              used.
             </p>
           </div>
-
         </Card>
       </motion.div>
-
     </div>
   );
 };

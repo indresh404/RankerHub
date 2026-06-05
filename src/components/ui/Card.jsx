@@ -31,7 +31,7 @@ export const Card = ({
       onMouseLeave={() => setIsHovered(false)}
       style={{
         "--mouse-x": `${mouseCoords.x}px`,
-        "--mouse-y": `${mouseCoords.y}px`
+        "--mouse-y": `${mouseCoords.y}px`,
       }}
       className={`
         relative backdrop-blur-xl bg-white/70 dark:bg-slate-900/70
@@ -49,13 +49,11 @@ export const Card = ({
           className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 rounded-2xl"
           style={{
             opacity: isHovered ? 1 : 0,
-            background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(124, 58, 237, 0.08), transparent 80%)`
+            background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(124, 58, 237, 0.08), transparent 80%)`,
           }}
         />
       )}
-      <div className="relative z-10 w-full h-full">
-        {children}
-      </div>
+      <div className="relative z-10 w-full h-full">{children}</div>
     </motion.div>
   );
 };

@@ -8,7 +8,7 @@ import {
   Star,
   Target,
   Sparkles,
-  Share2
+  Share2,
 } from "lucide-react";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
@@ -16,21 +16,13 @@ import { systemBadges } from "../constants";
 import { useAuth } from "../context/AuthContext";
 
 const Twitter = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
 const Linkedin = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-  >
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
   </svg>
 );
@@ -40,7 +32,8 @@ export const Achievements = () => {
   const [selectedBadge, setSelectedBadge] = useState(systemBadges[0]);
 
   const shareBadge = (platform, badgeName) => {
-    const profileLink = window.location.origin + `/profile/${userData?.uid || ""}`;
+    const profileLink =
+      window.location.origin + `/profile/${userData?.uid || ""}`;
     const text = `I just unlocked the ${badgeName} on RankerHub! Check out my rank here: ${profileLink}`;
     const encodedText = encodeURIComponent(text);
     const encodedUrl = encodeURIComponent(profileLink);
@@ -66,65 +59,75 @@ export const Achievements = () => {
 
   // Calculate dynamic progress mapping for the 4 badges
   const badgeProgress = {
-    b1: { unlocked: true, unlockedAt: "May 10, 2026", progress: 100, current: 1, target: 1, label: "First 100 users whitelist" },
-    b2: { 
-      unlocked: commits >= 100, 
-      unlockedAt: commits >= 100 ? "Verified" : null, 
-      progress: Math.min(100, Math.round((commits / 100) * 100)), 
-      current: commits, 
-      target: 100, 
-      label: "GitHub Commits Audited" 
+    b1: {
+      unlocked: true,
+      unlockedAt: "May 10, 2026",
+      progress: 100,
+      current: 1,
+      target: 1,
+      label: "First 100 users whitelist",
     },
-    b3: { 
-      unlocked: streak >= 10, 
-      unlockedAt: streak >= 10 ? "Verified" : null, 
-      progress: Math.min(100, Math.round((streak / 10) * 100)), 
-      current: streak, 
-      target: 10, 
-      label: "Daily Consistency Streaks" 
+    b2: {
+      unlocked: commits >= 100,
+      unlockedAt: commits >= 100 ? "Verified" : null,
+      progress: Math.min(100, Math.round((commits / 100) * 100)),
+      current: commits,
+      target: 100,
+      label: "GitHub Commits Audited",
     },
-    b4: { 
-      unlocked: codingVersePoints >= 100, 
-      unlockedAt: codingVersePoints >= 100 ? "Verified" : null, 
-      progress: Math.min(100, Math.round((codingVersePoints / 100) * 100)), 
-      current: codingVersePoints, 
-      target: 100, 
-      label: "Frontend Arenas Solved (XP)" 
-    }
+    b3: {
+      unlocked: streak >= 10,
+      unlockedAt: streak >= 10 ? "Verified" : null,
+      progress: Math.min(100, Math.round((streak / 10) * 100)),
+      current: streak,
+      target: 10,
+      label: "Daily Consistency Streaks",
+    },
+    b4: {
+      unlocked: codingVersePoints >= 100,
+      unlockedAt: codingVersePoints >= 100 ? "Verified" : null,
+      progress: Math.min(100, Math.round((codingVersePoints / 100) * 100)),
+      current: codingVersePoints,
+      target: 100,
+      label: "Frontend Arenas Solved (XP)",
+    },
   };
 
   // Dynamically calculate daily quests completion from actual platform performance
   const dailyQuests = [
-    { 
-      id: "q1", 
-      title: "GitRank Explorer", 
-      description: "Audit commits in any public repository", 
-      xp: 50, 
-      progress: commits > 0 ? 1 : 0, 
-      target: 1, 
-      completed: commits > 0 
+    {
+      id: "q1",
+      title: "GitRank Explorer",
+      description: "Audit commits in any public repository",
+      xp: 50,
+      progress: commits > 0 ? 1 : 0,
+      target: 1,
+      completed: commits > 0,
     },
-    { 
-      id: "q2", 
-      title: "Consistency Streak", 
-      description: "Maintain your daily streak in CodingOwl", 
-      xp: 100, 
-      progress: streak > 0 ? 1 : 0, 
-      target: 1, 
-      completed: streak > 0 
+    {
+      id: "q2",
+      title: "Consistency Streak",
+      description: "Maintain your daily streak in CodingOwl",
+      xp: 100,
+      progress: streak > 0 ? 1 : 0,
+      target: 1,
+      completed: streak > 0,
     },
-    { 
-      id: "q3", 
-      title: "Verse Conqueror", 
-      description: "Solve a medium-difficulty problem in CodingVerse (40 XP each)", 
-      xp: 150, 
-      progress: Math.min(2, Math.floor(codingVersePoints / 40)), 
-      target: 2, 
-      completed: codingVersePoints >= 80 
-    }
+    {
+      id: "q3",
+      title: "Verse Conqueror",
+      description:
+        "Solve a medium-difficulty problem in CodingVerse (40 XP each)",
+      xp: 150,
+      progress: Math.min(2, Math.floor(codingVersePoints / 40)),
+      target: 2,
+      completed: codingVersePoints >= 80,
+    },
   ];
 
-  const unlockedCount = Object.values(badgeProgress).filter((b) => b.unlocked).length;
+  const unlockedCount = Object.values(badgeProgress).filter(
+    (b) => b.unlocked,
+  ).length;
 
   return (
     <div className="space-y-8">
@@ -136,10 +139,8 @@ export const Achievements = () => {
         badgeColor="bg-violet-500/10 text-violet-500 dark:text-violet-400 border border-violet-500/20"
       />
 
-
       {/* Main Grid: Left side Badges list, Right side detail */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Left Side: Badge List */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
@@ -154,7 +155,10 @@ export const Achievements = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {systemBadges.map((badge) => {
-              const info = badgeProgress[badge.id] || { unlocked: false, progress: 0 };
+              const info = badgeProgress[badge.id] || {
+                unlocked: false,
+                progress: 0,
+              };
               const isSelected = selectedBadge.id === badge.id;
 
               return (
@@ -173,8 +177,10 @@ export const Achievements = () => {
                       !info.unlocked ? "brightness-75 saturate-50" : ""
                     }`}
                   >
-                    <span className="text-xl font-black text-white uppercase">{badge.name[0]}</span>
-                    
+                    <span className="text-xl font-black text-white uppercase">
+                      {badge.name[0]}
+                    </span>
+
                     {/* Locked / Unlocked Indicator */}
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
                       {info.unlocked ? (
@@ -210,7 +216,10 @@ export const Achievements = () => {
 
                     {/* Share action buttons row */}
                     {info.unlocked && (
-                      <div className="flex gap-2 pt-1 mt-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex gap-2 pt-1 mt-1 justify-end"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           onClick={() => shareBadge("twitter", badge.name)}
                           className="p-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/20 hover:scale-105 transition-all cursor-pointer"
@@ -252,12 +261,16 @@ export const Achievements = () => {
                 <Card
                   key={quest.id}
                   className={`p-4 flex items-center justify-between gap-4 border border-slate-200/50 dark:border-slate-800/50 transition-all ${
-                    quest.completed ? "bg-emerald-500/5 dark:bg-emerald-500/2 border-emerald-500/20" : ""
+                    quest.completed
+                      ? "bg-emerald-500/5 dark:bg-emerald-500/2 border-emerald-500/20"
+                      : ""
                   }`}
                 >
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className={`font-extrabold text-sm ${quest.completed ? "text-emerald-500 dark:text-emerald-400" : "text-slate-900 dark:text-white"}`}>
+                      <span
+                        className={`font-extrabold text-sm ${quest.completed ? "text-emerald-500 dark:text-emerald-400" : "text-slate-900 dark:text-white"}`}
+                      >
                         {quest.title}
                       </span>
                       {quest.completed && (
@@ -279,8 +292,7 @@ export const Achievements = () => {
 
                     {/* XP reward */}
                     <div className="flex items-center gap-1 bg-violet-500/10 text-violet-500 dark:text-violet-400 border border-violet-500/20 px-2 py-1 rounded-lg text-xs font-black">
-                      <Zap className="w-3 h-3 fill-current" />
-                      +{quest.xp} XP
+                      <Zap className="w-3 h-3 fill-current" />+{quest.xp} XP
                     </div>
                   </div>
                 </Card>
@@ -306,13 +318,19 @@ export const Achievements = () => {
             >
               <Card className="p-6 border border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-b from-slate-50/50 to-slate-100/50 dark:from-slate-900/40 dark:to-slate-950/40 relative overflow-hidden">
                 {/* Decorative absolute element */}
-                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${selectedBadge.color} opacity-5 blur-[40px] pointer-events-none rounded-full`} />
+                <div
+                  className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${selectedBadge.color} opacity-5 blur-[40px] pointer-events-none rounded-full`}
+                />
 
                 <div className="flex flex-col items-center text-center space-y-4 relative z-10">
                   {/* Glowing Big Badge representation */}
-                  <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${selectedBadge.color} flex items-center justify-center shadow-xl shadow-indigo-500/10 relative`}>
-                    <span className="text-4xl font-black text-white uppercase">{selectedBadge.name[0]}</span>
-                    
+                  <div
+                    className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${selectedBadge.color} flex items-center justify-center shadow-xl shadow-indigo-500/10 relative`}
+                  >
+                    <span className="text-4xl font-black text-white uppercase">
+                      {selectedBadge.name[0]}
+                    </span>
+
                     {/* Orbit Ring */}
                     <div className="absolute inset-0 rounded-3xl border border-white/20 animate-pulse" />
                   </div>
@@ -322,7 +340,9 @@ export const Achievements = () => {
                       {selectedBadge.name}
                     </h3>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mt-1">
-                      {badgeProgress[selectedBadge.id]?.unlocked ? "Status: Unlocked" : "Status: In Progress"}
+                      {badgeProgress[selectedBadge.id]?.unlocked
+                        ? "Status: Unlocked"
+                        : "Status: In Progress"}
                     </span>
                   </div>
 
@@ -332,23 +352,33 @@ export const Achievements = () => {
 
                   <div className="w-full pt-4 border-t border-slate-200/40 dark:border-slate-800/40 text-left space-y-3.5">
                     <div>
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Criteria</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Criteria
+                      </span>
                       <span className="text-xs font-bold text-slate-850 dark:text-slate-200 block mt-0.5">
                         {badgeProgress[selectedBadge.id]?.label}
                       </span>
                     </div>
 
                     <div>
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Milestone Progress</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Milestone Progress
+                      </span>
                       <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
-                        <span>{badgeProgress[selectedBadge.id]?.current} earned</span>
-                        <span>of {badgeProgress[selectedBadge.id]?.target} required</span>
+                        <span>
+                          {badgeProgress[selectedBadge.id]?.current} earned
+                        </span>
+                        <span>
+                          of {badgeProgress[selectedBadge.id]?.target} required
+                        </span>
                       </div>
-                      
+
                       <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1.5">
                         <div
                           className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"
-                          style={{ width: `${badgeProgress[selectedBadge.id]?.progress}%` }}
+                          style={{
+                            width: `${badgeProgress[selectedBadge.id]?.progress}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -357,28 +387,37 @@ export const Achievements = () => {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold justify-center">
                           <Star className="w-4 h-4 fill-current" />
-                          Unlocked on {badgeProgress[selectedBadge.id]?.unlockedAt}
+                          Unlocked on{" "}
+                          {badgeProgress[selectedBadge.id]?.unlockedAt}
                         </div>
-                        
+
                         <div className="space-y-2">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Share Achievement</span>
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
+                            Share Achievement
+                          </span>
                           <div className="flex justify-center gap-2.5">
                             <button
-                              onClick={() => shareBadge("twitter", selectedBadge.name)}
+                              onClick={() =>
+                                shareBadge("twitter", selectedBadge.name)
+                              }
                               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/20 text-xs font-bold transition-all cursor-pointer"
                             >
                               <Twitter className="w-3.5 h-3.5" />
                               Twitter
                             </button>
                             <button
-                              onClick={() => shareBadge("linkedin", selectedBadge.name)}
+                              onClick={() =>
+                                shareBadge("linkedin", selectedBadge.name)
+                              }
                               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 text-xs font-bold transition-all cursor-pointer"
                             >
                               <Linkedin className="w-3.5 h-3.5" />
                               LinkedIn
                             </button>
                             <button
-                              onClick={() => shareBadge("whatsapp", selectedBadge.name)}
+                              onClick={() =>
+                                shareBadge("whatsapp", selectedBadge.name)
+                              }
                               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 text-xs font-bold transition-all cursor-pointer"
                             >
                               <Share2 className="w-3.5 h-3.5" />
@@ -399,9 +438,7 @@ export const Achievements = () => {
             </motion.div>
           </AnimatePresence>
         </div>
-
       </div>
-
     </div>
   );
 };

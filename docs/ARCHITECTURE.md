@@ -47,21 +47,25 @@ RankerHub is a gamified GitHub developer ranking platform built with modern web 
 ## Technology Stack
 
 ### Frontend Framework & Build Tools
+
 - **React 19**: Core UI framework with modern hooks
 - **Vite 8**: Next-generation build tool for fast development
 - **React Router 7**: Client-side routing and navigation
 - **TypeScript Ready**: ESLint support for code quality
 
 ### State Management
+
 - **Context API**: Global state (Authentication, Theme, Rate Limiting)
 - **React Hooks**: Component-level state management
 
 ### Styling & Animation
+
 - **Tailwind CSS 3.4**: Utility-first CSS framework
 - **Framer Motion 12**: Animation library for smooth transitions
 - **PostCSS**: CSS preprocessing and optimization
 
 ### Backend & Data
+
 - **Firebase 12**: Complete backend-as-a-service solution
   - Authentication: GitHub OAuth
   - Realtime Database: Firestore
@@ -70,11 +74,13 @@ RankerHub is a gamified GitHub developer ranking platform built with modern web 
 - **Axios**: HTTP client for API calls
 
 ### UI Components & Icons
+
 - **Lucide React**: Modern icon library (1.17k+ icons)
 - **React Icons**: Additional icon variants
 - **Lottie React**: Complex animations support
 
 ### Testing & Development
+
 - **Vitest 4**: Fast unit testing framework
 - **ESLint 10**: Code linting and style enforcement
 - **Autoprefixer**: CSS vendor prefix automation
@@ -84,133 +90,134 @@ RankerHub is a gamified GitHub developer ranking platform built with modern web 
 ## Directory Structure
 
 ### Root Level
+
 \\\
 rankerhub/
-├── docs/                          # Documentation
-│   ├── ARCHITECTURE.md            # This file
-│   └── CONTRIBUTING.md            # Contribution guidelines
-├── public/                        # Static assets (favicons, robots.txt)
-├── src/                           # Source code
-├── .env.example                   # Environment variables template
-├── .firebase.rc                   # Firebase configuration
-├── .gitignore                     # Git ignore rules
-├── .markdownlint.json             # Markdown linting rules
-├── eslint.config.js               # ESLint configuration
-├── firebase.json                  # Firebase deployment config
-├── firestore.rules                # Firestore security rules
-├── index.html                     # HTML entry point
-├── package.json                   # NPM dependencies
-├── postcss.config.js              # PostCSS configuration
-├── tailwind.config.js             # Tailwind CSS configuration
-├── vite.config.js                 # Vite configuration
-├── vercel.json                    # Vercel deployment config
-└── README.md                      # Project overview
+├── docs/ # Documentation
+│ ├── ARCHITECTURE.md # This file
+│ └── CONTRIBUTING.md # Contribution guidelines
+├── public/ # Static assets (favicons, robots.txt)
+├── src/ # Source code
+├── .env.example # Environment variables template
+├── .firebase.rc # Firebase configuration
+├── .gitignore # Git ignore rules
+├── .markdownlint.json # Markdown linting rules
+├── eslint.config.js # ESLint configuration
+├── firebase.json # Firebase deployment config
+├── firestore.rules # Firestore security rules
+├── index.html # HTML entry point
+├── package.json # NPM dependencies
+├── postcss.config.js # PostCSS configuration
+├── tailwind.config.js # Tailwind CSS configuration
+├── vite.config.js # Vite configuration
+├── vercel.json # Vercel deployment config
+└── README.md # Project overview
 \\\
 
 ### src/ Directory Structure
 
 \\\
 src/
-├── assets/                        # Static and animated assets
-│   └── animations/                # Lottie animation files
+├── assets/ # Static and animated assets
+│ └── animations/ # Lottie animation files
 │
-├── components/                    # React components
-│   ├── about/                     # About page components
-│   │   ├── ContributorCard.jsx    # Individual contributor card
-│   │   ├── ContributorsGrid.jsx   # Grid layout for contributors
-│   │   ├── ContributionCTA.jsx    # Call-to-action component
-│   │   └── TeamCard.jsx           # Team member showcase
-│   │
-│   ├── dashboard/                 # Dashboard-specific components
-│   │   ├── ActivityFeed.jsx       # User activity timeline
-│   │   ├── RankPreview.jsx        # Rank score display
-│   │   ├── StatsCards.jsx         # Statistics cards
-│   │   └── StreakCard.jsx         # Streak tracking component
-│   │
-│   ├── friends/                   # Friend-related components
-│   │   └── DeveloperCard.jsx      # Developer profile card
-│   │
-│   ├── layout/                    # Layout components
-│   │   ├── Navbar.jsx             # Authenticated user navbar
-│   │   ├── PublicNavbar.jsx       # Public site navbar
-│   │   ├── PublicFooter.jsx       # Public site footer
-│   │   ├── Sidebar.jsx            # Desktop sidebar navigation
-│   │   └── MobileSidebar.jsx      # Mobile drawer navigation
-│   │
-│   └── ui/                        # Reusable UI components
-│       ├── Card.jsx               # Generic card wrapper
-│       ├── ErrorBoundary.jsx      # Error fallback component
-│       ├── Toast.jsx              # Toast notification system
-│       ├── Loader.jsx             # Loading spinner
-│       ├── GradientButton.jsx     # Styled button component
-│       ├── ThemeToggle.jsx        # Dark/light theme switcher
-│       ├── Icons.jsx              # Custom icon set
-│       ├── LottiePlayer.jsx       # Animation player wrapper
-│       ├── SectionHeader.jsx      # Section title component
-│       ├── RateLimitBanner.jsx    # API rate limit indicator
-│       ├── HowItWorksModal.jsx    # Feature explanation modal
-│       ├── AboutModal.jsx         # About information modal
-│       ├── LogoutConfirmModal.jsx # Confirmation dialog
-│       ├── ComingSoonCard.jsx     # Coming soon feature card
-│       └── GlobalModals.jsx       # Global modal provider
+├── components/ # React components
+│ ├── about/ # About page components
+│ │ ├── ContributorCard.jsx # Individual contributor card
+│ │ ├── ContributorsGrid.jsx # Grid layout for contributors
+│ │ ├── ContributionCTA.jsx # Call-to-action component
+│ │ └── TeamCard.jsx # Team member showcase
+│ │
+│ ├── dashboard/ # Dashboard-specific components
+│ │ ├── ActivityFeed.jsx # User activity timeline
+│ │ ├── RankPreview.jsx # Rank score display
+│ │ ├── StatsCards.jsx # Statistics cards
+│ │ └── StreakCard.jsx # Streak tracking component
+│ │
+│ ├── friends/ # Friend-related components
+│ │ └── DeveloperCard.jsx # Developer profile card
+│ │
+│ ├── layout/ # Layout components
+│ │ ├── Navbar.jsx # Authenticated user navbar
+│ │ ├── PublicNavbar.jsx # Public site navbar
+│ │ ├── PublicFooter.jsx # Public site footer
+│ │ ├── Sidebar.jsx # Desktop sidebar navigation
+│ │ └── MobileSidebar.jsx # Mobile drawer navigation
+│ │
+│ └── ui/ # Reusable UI components
+│ ├── Card.jsx # Generic card wrapper
+│ ├── ErrorBoundary.jsx # Error fallback component
+│ ├── Toast.jsx # Toast notification system
+│ ├── Loader.jsx # Loading spinner
+│ ├── GradientButton.jsx # Styled button component
+│ ├── ThemeToggle.jsx # Dark/light theme switcher
+│ ├── Icons.jsx # Custom icon set
+│ ├── LottiePlayer.jsx # Animation player wrapper
+│ ├── SectionHeader.jsx # Section title component
+│ ├── RateLimitBanner.jsx # API rate limit indicator
+│ ├── HowItWorksModal.jsx # Feature explanation modal
+│ ├── AboutModal.jsx # About information modal
+│ ├── LogoutConfirmModal.jsx # Confirmation dialog
+│ ├── ComingSoonCard.jsx # Coming soon feature card
+│ └── GlobalModals.jsx # Global modal provider
 │
-├── context/                       # React Context providers
-│   ├── AuthContext.jsx            # Authentication state & methods
-│   ├── ThemeContext.jsx           # Theme toggle state
-│   ├── RateLimitContext.jsx       # API rate limit tracking
-│   └── rateLimitContextValue.js   # Rate limit utilities
+├── context/ # React Context providers
+│ ├── AuthContext.jsx # Authentication state & methods
+│ ├── ThemeContext.jsx # Theme toggle state
+│ ├── RateLimitContext.jsx # API rate limit tracking
+│ └── rateLimitContextValue.js # Rate limit utilities
 │
-├── data/                          # Static data files
-│   ├── activities.js              # Sample activity data
-│   ├── leaderboard.js             # Leaderboard data
-│   └── streaks.js                 # Streak data
+├── data/ # Static data files
+│ ├── activities.js # Sample activity data
+│ ├── leaderboard.js # Leaderboard data
+│ └── streaks.js # Streak data
 │
-├── hooks/                         # Custom React hooks
-│   ├── useTheme.js                # Theme context hook
-│   └── useSidebar.js              # Sidebar state hook
+├── hooks/ # Custom React hooks
+│ ├── useTheme.js # Theme context hook
+│ └── useSidebar.js # Sidebar state hook
 │
-├── layouts/                       # Page layout templates
-│   ├── DashboardLayout.jsx        # Authenticated user layout
-│   └── PublicLayout.jsx           # Public website layout
+├── layouts/ # Page layout templates
+│ ├── DashboardLayout.jsx # Authenticated user layout
+│ └── PublicLayout.jsx # Public website layout
 │
-├── lib/                           # Library integrations
-│   └── firebase.js                # Firebase configuration & helpers
+├── lib/ # Library integrations
+│ └── firebase.js # Firebase configuration & helpers
 │
-├── pages/                         # Page components (routes)
-│   ├── Home.jsx                   # Landing page
-│   ├── Login.jsx                  # GitHub OAuth login
-│   ├── Onboarding.jsx             # User setup wizard
-│   ├── Dashboard.jsx              # Main dashboard view
-│   ├── Profile.jsx                # User profile (self & others)
-│   ├── Friends.jsx                # Friends list and followers
-│   ├── Achievements.jsx           # Badges and milestones
-│   ├── GitRank.jsx                # GitHub ranking details
-│   ├── RankHer.jsx                # Women developers ranking
-│   ├── CodingVerse.jsx            # Alternative ranking category
-│   ├── CodingOwl.jsx              # Night owl ranking
-│   ├── About.jsx                  # About the project
-│   ├── Terms.jsx                  # Terms of service
-│   ├── Privacy.jsx                # Privacy policy
-│   └── NotFound.jsx               # 404 error page
+├── pages/ # Page components (routes)
+│ ├── Home.jsx # Landing page
+│ ├── Login.jsx # GitHub OAuth login
+│ ├── Onboarding.jsx # User setup wizard
+│ ├── Dashboard.jsx # Main dashboard view
+│ ├── Profile.jsx # User profile (self & others)
+│ ├── Friends.jsx # Friends list and followers
+│ ├── Achievements.jsx # Badges and milestones
+│ ├── GitRank.jsx # GitHub ranking details
+│ ├── RankHer.jsx # Women developers ranking
+│ ├── CodingVerse.jsx # Alternative ranking category
+│ ├── CodingOwl.jsx # Night owl ranking
+│ ├── About.jsx # About the project
+│ ├── Terms.jsx # Terms of service
+│ ├── Privacy.jsx # Privacy policy
+│ └── NotFound.jsx # 404 error page
 │
-├── routes/                        # Routing configuration
-│   └── AppRoutes.jsx              # Centralized route definitions
+├── routes/ # Routing configuration
+│ └── AppRoutes.jsx # Centralized route definitions
 │
-├── services/                      # Business logic services
-│   └── friendsService.js          # Friend operations (add, remove, list)
+├── services/ # Business logic services
+│ └── friendsService.js # Friend operations (add, remove, list)
 │
-├── utils/                         # Utility functions
-│   ├── motion.js                  # Framer Motion animations
-│   ├── motion.test.js             # Animation tests
-│   └── searchUtils.js             # Search functionality helpers
+├── utils/ # Utility functions
+│ ├── motion.js # Framer Motion animations
+│ ├── motion.test.js # Animation tests
+│ └── searchUtils.js # Search functionality helpers
 │
-├── constants/                     # Application constants
-│   └── index.js                   # Centralized constants
+├── constants/ # Application constants
+│ └── index.js # Centralized constants
 │
-├── App.jsx                        # Root app component
-├── App.css                        # Global app styles
-├── main.jsx                       # React DOM entry point
-└── index.css                      # Global stylesheet
+├── App.jsx # Root app component
+├── App.css # Global app styles
+├── main.jsx # React DOM entry point
+└── index.css # Global stylesheet
 
 \\\
 
@@ -222,16 +229,16 @@ src/
 
 \\\mermaid
 graph TD
-    A[main.jsx] -->|imports| B[App.jsx]
-    B -->|wraps with| C[ErrorBoundary]
-    C -->|wraps with| D[ThemeProvider]
-    D -->|wraps with| E[AuthProvider]
-    E -->|wraps with| F[RateLimitProvider]
-    F -->|wraps with| G[HashRouter]
-    G -->|renders| H[AppRoutes]
-    H -->|contains| I[Route Guards<br/>ProtectedRoute<br/>OnboardingRoute<br/>GuestRoute]
-    I -->|routes to| J[Page Components]
-    I -->|routes to| K[Layout Components]
+A[main.jsx] -->|imports| B[App.jsx]
+B -->|wraps with| C[ErrorBoundary]
+C -->|wraps with| D[ThemeProvider]
+D -->|wraps with| E[AuthProvider]
+E -->|wraps with| F[RateLimitProvider]
+F -->|wraps with| G[HashRouter]
+G -->|renders| H[AppRoutes]
+H -->|contains| I[Route Guards<br/>ProtectedRoute<br/>OnboardingRoute<br/>GuestRoute]
+I -->|routes to| J[Page Components]
+I -->|routes to| K[Layout Components]
 \\\
 
 ### Provider Hierarchy
@@ -254,17 +261,17 @@ This hierarchy ensures proper state initialization and dependency ordering.
 
 \\\mermaid
 graph TD
-    App["App<br/>(Root Component)"]
-    App -->|children| EB["ErrorBoundary"]
-    EB -->|children| Theme["ThemeProvider"]
-    Theme -->|children| Auth["AuthProvider"]
-    Auth -->|children| Rate["RateLimitProvider"]
-    Rate -->|children| Router["HashRouter"]
-    Router -->|contains| Routes["Routes Component"]
-    Routes -->|public routes| PL["PublicLayout"]
-    Routes -->|protected routes| PR["ProtectedRoute"]
-    Routes -->|guest only| GR["GuestRoute"]
-    Routes -->|onboarding| OR["OnboardingRoute"]
+App["App<br/>(Root Component)"]
+App -->|children| EB["ErrorBoundary"]
+EB -->|children| Theme["ThemeProvider"]
+Theme -->|children| Auth["AuthProvider"]
+Auth -->|children| Rate["RateLimitProvider"]
+Rate -->|children| Router["HashRouter"]
+Router -->|contains| Routes["Routes Component"]
+Routes -->|public routes| PL["PublicLayout"]
+Routes -->|protected routes| PR["ProtectedRoute"]
+Routes -->|guest only| GR["GuestRoute"]
+Routes -->|onboarding| OR["OnboardingRoute"]
 
     PL -->|outlets| PB["Page Body"]
     PL -->|has| PNav["PublicNavbar"]
@@ -285,6 +292,7 @@ graph TD
     style Router fill:#06b6d4
     style PL fill:#f59e0b
     style DL fill:#8b5cf6
+
 \\\
 
 ### Dashboard Component Tree (Example)
@@ -292,26 +300,26 @@ graph TD
 \\\
 DashboardLayout
 ├── Navbar
-│   ├── Theme Toggle
-│   ├── User Menu
-│   └── Notifications
+│ ├── Theme Toggle
+│ ├── User Menu
+│ └── Notifications
 ├── Sidebar
-│   ├── Logo
-│   ├── Navigation Links
-│   └── Collapse Toggle
+│ ├── Logo
+│ ├── Navigation Links
+│ └── Collapse Toggle
 ├── Main Content (Outlet)
-│   └── Dashboard Page
-│       ├── StatsCards
-│       │   ├── Card (GitRank Points)
-│       │   ├── Card (Achievements)
-│       │   └── Card (Followers)
-│       ├── StreakCard
-│       └── ActivityFeed
-│           ├── Activity Item
-│           ├── Activity Item
-│           └── Activity Item
+│ └── Dashboard Page
+│ ├── StatsCards
+│ │ ├── Card (GitRank Points)
+│ │ ├── Card (Achievements)
+│ │ └── Card (Followers)
+│ ├── StreakCard
+│ └── ActivityFeed
+│ ├── Activity Item
+│ ├── Activity Item
+│ └── Activity Item
 └── MobileSidebar (Drawer)
-    └── Navigation Links
+└── Navigation Links
 \\\
 
 ---
@@ -322,12 +330,12 @@ DashboardLayout
 
 \\\mermaid
 sequenceDiagram
-    participant Browser
-    participant Vite as Vite Dev Server
-    participant main.jsx
-    participant App.jsx
-    participant AuthContext
-    participant Firebase
+participant Browser
+participant Vite as Vite Dev Server
+participant main.jsx
+participant App.jsx
+participant AuthContext
+participant Firebase
 
     Browser->>Vite: Request application
     Vite->>main.jsx: Load entry point
@@ -339,11 +347,13 @@ sequenceDiagram
     AuthContext-->>App.jsx: Provide auth state
     App.jsx->>App.jsx: Render UI with context
     App.jsx-->>Browser: Display application
+
 \\\
 
 ### Page Load Sequence for Authenticated User
 
 \\\
+
 1. User visits application
    ↓
 2. React mounts App component
@@ -356,7 +366,7 @@ sequenceDiagram
    - Calls onAuthStateChanged() to check Firebase session
    - If user exists, fetches Firestore user profile in real-time
    - Sets loading=false when complete
-   ↓
+     ↓
 6. RateLimitProvider initializes
    ↓
 7. HashRouter mounted with routes
@@ -366,11 +376,11 @@ sequenceDiagram
 9. If ProtectedRoute and user authenticated:
    - Load DashboardLayout
    - Render corresponding page
-   ↓
+     ↓
 10. Page renders with all context available
     ↓
 11. Components can now use useAuth(), useTheme(), etc.
-\\\
+    \\\
 
 ---
 
@@ -387,20 +397,22 @@ RankerHub uses React Context API for global state with three main contexts:
 **State:**
 \\\
 {
-  user: FirebaseUser | null,           // Current Firebase auth user
-  userData: Object | null,             // Firestore user profile document
-  loading: boolean,                    // Auth state loading indicator
-  isOnboarding: boolean,               // Profile setup incomplete flag
-  ghAccessToken: string | null,        // GitHub OAuth token (memory only)
+user: FirebaseUser | null, // Current Firebase auth user
+userData: Object | null, // Firestore user profile document
+loading: boolean, // Auth state loading indicator
+isOnboarding: boolean, // Profile setup incomplete flag
+ghAccessToken: string | null, // GitHub OAuth token (memory only)
 }
 \\\
 
 **Methods:**
+
 - \login(requestRepoScope: boolean)\ - GitHub OAuth sign-in
 - \logout()\ - Sign out and clear state
 - \etchGitHubStats(uid, username)\ - Call GitHub API for user stats
 
 **Key Security Features:**
+
 - GitHub access token stored ONLY in React memory (not localStorage)
 - Prevents XSS attacks that could steal tokens from Web Storage
 - Token lost on page refresh, but only needed once after login
@@ -413,12 +425,13 @@ RankerHub uses React Context API for global state with three main contexts:
 **State:**
 \\\
 {
-  theme: 'light' | 'dark',            // Current theme
-  isDark: boolean,                    // Convenience boolean
+theme: 'light' | 'dark', // Current theme
+isDark: boolean, // Convenience boolean
 }
 \\\
 
 **Features:**
+
 - Persists to localStorage
 - Respects system color scheme on first load
 - Updates root HTML element class
@@ -430,14 +443,15 @@ RankerHub uses React Context API for global state with three main contexts:
 **State:**
 \\\
 {
-  remaining: number,                  // Remaining API calls
-  limit: number,                      // Total API limit
-  resetTime: Date,                    // Rate limit reset timestamp
-  isLimited: boolean,                 // Exceeded rate limit flag
+remaining: number, // Remaining API calls
+limit: number, // Total API limit
+resetTime: Date, // Rate limit reset timestamp
+isLimited: boolean, // Exceeded rate limit flag
 }
 \\\
 
 **Usage:**
+
 - Monitors GitHub API response headers
 - Displays banner warning when rate limited
 - Prevents unnecessary API calls
@@ -446,13 +460,13 @@ RankerHub uses React Context API for global state with three main contexts:
 
 \\\mermaid
 graph LR
-    A["User Action<br/>(Login, Theme Toggle)"]
-    A -->|dispatch| B["Context Update"]
-    B -->|persist| C["localStorage/<br/>Firestore"]
-    B -->|set state| D["Context Provider"]
-    D -->|provide via| E["useContext Hook"]
-    E -->|trigger| F["Component Re-render"]
-    F -->|display| G["Updated UI"]
+A["User Action<br/>(Login, Theme Toggle)"]
+A -->|dispatch| B["Context Update"]
+B -->|persist| C["localStorage/<br/>Firestore"]
+B -->|set state| D["Context Provider"]
+D -->|provide via| E["useContext Hook"]
+E -->|trigger| F["Component Re-render"]
+F -->|display| G["Updated UI"]
 \\\
 
 ---
@@ -463,13 +477,13 @@ graph LR
 
 \\\mermaid
 graph TD
-    AppRoutes["AppRoutes Component"]
-    AppRoutes -->|PublicLayout| PL["Public Pages"]
-    PL -->|/| Home["Home"]
-    PL -->|/gitrank| GitRankPub["GitRank Info"]
-    PL -->|/rankher| RankHer["RankHer Info"]
-    PL -->|/codingverse| CodingVerse["CodingVerse Info"]
-    PL -->|/codingowl| CodingOwl["CodingOwl Info"]
+AppRoutes["AppRoutes Component"]
+AppRoutes -->|PublicLayout| PL["Public Pages"]
+PL -->|/| Home["Home"]
+PL -->|/gitrank| GitRankPub["GitRank Info"]
+PL -->|/rankher| RankHer["RankHer Info"]
+PL -->|/codingverse| CodingVerse["CodingVerse Info"]
+PL -->|/codingowl| CodingOwl["CodingOwl Info"]
 
     AppRoutes -->|GuestRoute| Guest["Guest Only"]
     Guest -->|/login| Login["Login Page"]
@@ -494,6 +508,7 @@ graph TD
     Legal -->|/privacy| Privacy["Privacy"]
 
     AppRoutes -->|Catch-all| NotFound["404 Page"]
+
 \\\
 
 ### Route Guards
@@ -501,6 +516,7 @@ graph TD
 Three route guard components protect access:
 
 #### ProtectedRoute
+
 \\\javascript
 // Only accessible if:
 // 1. User is authenticated
@@ -509,6 +525,7 @@ Three route guard components protect access:
 \\\
 
 #### OnboardingRoute
+
 \\\javascript
 // Only accessible if:
 // 1. User is authenticated
@@ -517,6 +534,7 @@ Three route guard components protect access:
 \\\
 
 #### GuestRoute
+
 \\\javascript
 // Only accessible if NOT authenticated
 // Used for: /login page
@@ -527,11 +545,11 @@ Three route guard components protect access:
 
 \\\mermaid
 sequenceDiagram
-    participant User
-    participant Browser
-    participant React as React Router
-    participant Guard as Route Guard
-    participant Page as Page Component
+participant User
+participant Browser
+participant React as React Router
+participant Guard as Route Guard
+participant Page as Page Component
 
     User->>Browser: Click navigation link
     Browser->>React: Update URL hash
@@ -547,6 +565,7 @@ sequenceDiagram
         Guard->>React: Redirect to /login
         React->>Page: Render login page
     end
+
 \\\
 
 ---
@@ -557,11 +576,11 @@ sequenceDiagram
 
 \\\mermaid
 sequenceDiagram
-    participant User
-    participant Browser as Browser/App
-    participant Firebase as Firebase Auth
-    participant GitHub as GitHub OAuth
-    participant Firestore as Firestore
+participant User
+participant Browser as Browser/App
+participant Firebase as Firebase Auth
+participant GitHub as GitHub OAuth
+participant Firestore as Firestore
 
     User->>Browser: Click "Login with GitHub"
     Browser->>Firebase: signInWithGitHub()
@@ -584,6 +603,7 @@ sequenceDiagram
         Browser->>Browser: Set isOnboarding = false
         Browser->>Browser: Redirect to /dashboard
     end
+
 \\\
 
 ### User Data Structure
@@ -591,46 +611,46 @@ sequenceDiagram
 **Firestore User Document** (users/{uid}):
 \\\javascript
 {
-  // Core Identity
-  uid: "firebase-uid",
-  githubUsername: "developer-handle",
-  githubId: 12345678,
-  email: "<developer@example.com>",
-  name: "Developer Name",
-  avatar: "<https://avatars.githubusercontent.com/...>",
+// Core Identity
+uid: "firebase-uid",
+githubUsername: "developer-handle",
+githubId: 12345678,
+email: "<developer@example.com>",
+name: "Developer Name",
+avatar: "<https://avatars.githubusercontent.com/...>",
 
-  // Status
-  onboardingStatus: "complete" | "incomplete",
-  lastLogin: "2026-05-31T23:41:48Z",
-  createdAt: "2026-05-31T23:41:48Z",
+// Status
+onboardingStatus: "complete" | "incomplete",
+lastLogin: "2026-05-31T23:41:48Z",
+createdAt: "2026-05-31T23:41:48Z",
 
-  // GitHub Stats
-  commits: 1250,
-  prs: 150,
-  reviews: 300,
-  publicRepos: 25,
-  stars: 5000,
-  followers: 500,
-  primaryLanguage: "JavaScript",
+// GitHub Stats
+commits: 1250,
+prs: 150,
+reviews: 300,
+publicRepos: 25,
+stars: 5000,
+followers: 500,
+primaryLanguage: "JavaScript",
 
-  // Points System
-  points: {
-    gitRankPoints: 4250,        // (commits*2) + (prs*5) + (reviews*10)
-    codingVersePoints: 0,
-    streakPoints: 0,
-    referralPoints: 0,
-    totalPoints: 4250
-  },
+// Points System
+points: {
+gitRankPoints: 4250, // (commits*2) + (prs*5) + (reviews\*10)
+codingVersePoints: 0,
+streakPoints: 0,
+referralPoints: 0,
+totalPoints: 4250
+},
 
-  // Profile Data
-  city: "San Francisco, CA",
-  bio: "Open source enthusiast",
-  website: "<https://example.com>",
-  streak: 42,
+// Profile Data
+city: "San Francisco, CA",
+bio: "Open source enthusiast",
+website: "<https://example.com>",
+streak: 42,
 
-  // Privacy & Settings
-  profileVisibility: "public" | "private",
-  privateRepoSyncEnabled: false,
+// Privacy & Settings
+profileVisibility: "public" | "private",
+privateRepoSyncEnabled: false,
 }
 \\\
 
@@ -663,13 +683,15 @@ VITE_FIREBASE_MEASUREMENT_ID (optional)
 ### Firebase Services
 
 #### 1. **Authentication (Firebase Auth)**
+
 - GitHub OAuth provider
 - Scopes: \
-ead:user\, \user:email\, optional \
-epo\
+  ead:user\, \user:email\, optional \
+  epo\
 - Conditional repo scope for private repository sync
 
 #### 2. **Firestore Database**
+
 - **Collection: users** - User profiles and settings
 - **Collection: leaderboards** - Ranking data by category
 - **Collection: friends** - Friend relationship data
@@ -677,11 +699,13 @@ epo\
 - Real-time listeners for live updates
 
 #### 3. **Cloud Storage**
+
 - Profile pictures
 - Custom avatars
 - Badge images
 
 #### 4. **Analytics**
+
 - Page view tracking
 - User interaction tracking
 - Custom event logging
@@ -691,11 +715,11 @@ epo\
 \\\javascript
 // In AuthContext.jsx:
 const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-  // Called whenever Firestore document changes
-  // Updates React state with latest data
-  setUserData(docSnap.data());
+// Called whenever Firestore document changes
+// Updates React state with latest data
+setUserData(docSnap.data());
 }, (error) => {
-  console.error("Listener error:", error);
+console.error("Listener error:", error);
 });
 
 // Cleanup on unmount:
@@ -705,6 +729,7 @@ return () => unsubscribeSnapshot();
 ### Firestore Security Rules
 
 Enforced in \irestore.rules\:
+
 - Users can only read/write their own document
 - Public profiles readable by all authenticated users
 - Friends list visible only to involved parties
@@ -718,9 +743,9 @@ Enforced in \irestore.rules\:
 
 \\\mermaid
 sequenceDiagram
-    participant App as React App
-    participant Context as AuthContext
-    participant GitHub as GitHub API
+participant App as React App
+participant Context as AuthContext
+participant GitHub as GitHub API
 
     App->>Context: User logs in
     Context->>Context: Store access token in React state
@@ -737,28 +762,29 @@ sequenceDiagram
     GitHub-->>Context: Review count
     Context->>Context: Calculate GitRank = (commits*2) + (prs*5) + (reviews*10)
     Context-->>App: Return stats object
+
 \\\
 
 ### GitHub API Endpoints Used
 
 \\\
-GET  /users/{username}
-     Purpose: Public profile info
-     Rate Limit: 60 reqs/hr (unauthenticated), 5000/hr (authenticated)
+GET /users/{username}
+Purpose: Public profile info
+Rate Limit: 60 reqs/hr (unauthenticated), 5000/hr (authenticated)
 
-GET  /users/{username}/repos
-     Purpose: User's repositories (max 100 per request)
-     Data: Stars, language, description
+GET /users/{username}/repos
+Purpose: User's repositories (max 100 per request)
+Data: Stars, language, description
 
-GET  /search/commits?q=author:{username}
-     Purpose: Total commits count
-     Rate Limit: 30 reqs/min (authenticated only)
+GET /search/commits?q=author:{username}
+Purpose: Total commits count
+Rate Limit: 30 reqs/min (authenticated only)
 
-GET  /search/issues?q=author:{username}+type:pr
-     Purpose: Pull requests authored
+GET /search/issues?q=author:{username}+type:pr
+Purpose: Pull requests authored
 
-GET  /search/issues?q=reviewed-by:{username}
-     Purpose: Code reviews performed
+GET /search/issues?q=reviewed-by:{username}
+Purpose: Code reviews performed
 \\\
 
 ### Rate Limit Handling
@@ -777,14 +803,14 @@ GET  /search/issues?q=reviewed-by:{username}
 
 \\\mermaid
 graph TD
-    A["User Authentication<br/>(GitHub OAuth)"]
-    A -->|stores in| B["AuthContext"]
-    B -->|fetches from| C["Firestore User Doc"]
-    C -->|triggers| D["Real-time Listener"]
-    D -->|updates| E["userData state"]
-    E -->|used by| F["Dashboard Page"]
-    F -->|renders| G["StatsCards"]
-    G -->|displays| H["Points, Rank, Followers"]
+A["User Authentication<br/>(GitHub OAuth)"]
+A -->|stores in| B["AuthContext"]
+B -->|fetches from| C["Firestore User Doc"]
+C -->|triggers| D["Real-time Listener"]
+D -->|updates| E["userData state"]
+E -->|used by| F["Dashboard Page"]
+F -->|renders| G["StatsCards"]
+G -->|displays| H["Points, Rank, Followers"]
 
     F -->|renders| I["StreakCard"]
     I -->|displays| J["Current Streak"]
@@ -797,6 +823,7 @@ graph TD
 
     E -->|also used by| O["Friends Page"]
     O -->|displays| P["Friend List"]
+
 \\\
 
 ### Dashboard Component Data Binding
@@ -807,11 +834,12 @@ graph TD
 const { userData } = useAuth();
 
 // Display:
+
 - GitRank Points: userData.points.gitRankPoints
 - Achievements: userData.achievements?.length || 0
 - Followers: userData.followers
 - Repositories: userData.publicRepos
-\\\
+  \\\
 
 **ActivityFeed Component**:
 \\\javascript
@@ -832,7 +860,7 @@ const { userData } = useAuth();
    - Use functional components
    - Use React hooks for state
    - Follow naming conventions (PascalCase)
-   \\\
+     \\\
 
 2. **Add Route** (if page-level)
    \\\javascript
@@ -885,15 +913,15 @@ src/services/myService.js
 import { myApiFunction } from '../services/myService';
 
 const MyComponent = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    myApiFunction()
-      .then(setData)
-      .finally(() => setLoading(false));
-  }, []);
+useEffect(() => {
+setLoading(true);
+myApiFunction()
+.then(setData)
+.finally(() => setLoading(false));
+}, []);
 };
 \\\
 
@@ -916,6 +944,7 @@ npm run build
 \\\
 
 This executes Vite's build pipeline:
+
 1. Transpiles JSX/ES6+ to browser-compatible JavaScript
 2. Bundles code using efficient module resolution
 3. Minifies output
@@ -935,6 +964,7 @@ firebase deploy
 \\\
 
 Deploys:
+
 - Firestore security rules
 - Cloud functions (if any)
 - Analytics configuration
@@ -960,9 +990,9 @@ cp .env.example .env.local
 ### Production Checklist
 
 - [ ] All tests pass: \
-pm run test\
+      pm run test\
 - [ ] No linting errors: \
-pm run lint\
+      pm run lint\
 - [ ] Bundle size reviewed
 - [ ] Environment variables set
 - [ ] Firebase rules deployed
@@ -978,22 +1008,26 @@ pm run lint\
 ### Common Issues
 
 **Auth state not persisting:**
+
 - Check Firebase initialization
 - Verify env variables loaded
 - Check browser localStorage enabled
 
 **Rate limit errors:**
+
 - GitHub API limits hit
 - Check RateLimitContext
 - Display banner to user
 - Implement backoff retry
 
 **Firestore permission denied:**
+
 - Check firestore.rules
 - Verify user is authenticated
 - Check collection path matches
 
 **Animations stuttering:**
+
 - Use GPU-accelerated props (transform, opacity)
 - Avoid animating layout properties
 - Check Framer Motion configuration

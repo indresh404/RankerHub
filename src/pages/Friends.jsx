@@ -1,6 +1,12 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Activity, HeartHandshake, UserCheck, UserPlus, UsersRound } from "lucide-react";
+import {
+  Activity,
+  HeartHandshake,
+  UserCheck,
+  UserPlus,
+  UsersRound,
+} from "lucide-react";
 import SectionHeader from "../components/ui/SectionHeader";
 import Card from "../components/ui/Card";
 import DeveloperCard from "../components/friends/DeveloperCard";
@@ -11,13 +17,28 @@ import {
   hydrateConnections,
   toggleFollowStatus,
   subscribeToFollowing,
-  subscribeToFollowers
+  subscribeToFollowers,
 } from "../services/friendsService";
 
 const tabs = [
-  { id: "friends", label: "Friends", path: "/dashboard/friends", icon: HeartHandshake },
-  { id: "followers", label: "Followers", path: "/dashboard/friends/followers", icon: UsersRound },
-  { id: "following", label: "Following", path: "/dashboard/friends/following", icon: UserCheck }
+  {
+    id: "friends",
+    label: "Friends",
+    path: "/dashboard/friends",
+    icon: HeartHandshake,
+  },
+  {
+    id: "followers",
+    label: "Followers",
+    path: "/dashboard/friends/followers",
+    icon: UsersRound,
+  },
+  {
+    id: "following",
+    label: "Following",
+    path: "/dashboard/friends/following",
+    icon: UserCheck,
+  },
 ];
 
 const getActiveTab = (pathname) => {
@@ -43,7 +64,9 @@ export const Friends = () => {
     const loadDevelopers = async () => {
       try {
         const fetchedDevs = await fetchDevelopers();
-        const filteredDevs = fetchedDevs.filter(dev => dev.id !== currentUser?.uid);
+        const filteredDevs = fetchedDevs.filter(
+          (dev) => dev.id !== currentUser?.uid,
+        );
         setDevelopers(filteredDevs);
       } catch (error) {
         console.error("Failed to load developers", error);
@@ -51,15 +74,15 @@ export const Friends = () => {
         setLoading(false);
       }
     };
-    
+
     if (currentUser?.uid) {
       loadDevelopers();
-      
+
       // Setup Real-time Firebase Listeners
       unsubFollowing = subscribeToFollowing(currentUser.uid, (ids) => {
         setFollowingIds(ids);
       });
-      
+
       unsubFollowers = subscribeToFollowers(currentUser.uid, (ids) => {
         setFollowerIds(ids);
       });
@@ -73,14 +96,17 @@ export const Friends = () => {
 
   const connections = useMemo(
     () => hydrateConnections(developers, followingIds, followerIds),
-    [developers, followingIds, followerIds]
+    [developers, followingIds, followerIds],
   );
 
   const activeDevelopers = connections[activeTab];
   const tabCopy = {
-    friends: "Developers who follow you back and collaborate with you across RankerHub.",
-    followers: "Developers tracking your public progress, badges, and challenge activity.",
-    following: "Developers whose rankings, activity, and learning notes you follow."
+    friends:
+      "Developers who follow you back and collaborate with you across RankerHub.",
+    followers:
+      "Developers tracking your public progress, badges, and challenge activity.",
+    following:
+      "Developers whose rankings, activity, and learning notes you follow.",
   };
 
   const handleToggleFollow = async (developerId) => {
@@ -108,13 +134,28 @@ export const Friends = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Friends", value: connections.friends.length, icon: HeartHandshake },
-          { label: "Followers", value: connections.followers.length, icon: UsersRound },
-          { label: "Following", value: connections.following.length, icon: UserCheck }
+          {
+            label: "Friends",
+            value: connections.friends.length,
+            icon: HeartHandshake,
+          },
+          {
+            label: "Followers",
+            value: connections.followers.length,
+            icon: UsersRound,
+          },
+          {
+            label: "Following",
+            value: connections.following.length,
+            icon: UserCheck,
+          },
         ].map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="p-5 flex items-center justify-between gap-4">
+            <Card
+              key={stat.label}
+              className="p-5 flex items-center justify-between gap-4"
+            >
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   {stat.label}
@@ -182,9 +223,12 @@ export const Friends = () => {
           ) : (
             <Card className="p-8 text-center">
               <UsersRound className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-              <h3 className="font-black text-slate-900 dark:text-white my-0">No developers here yet</h3>
+              <h3 className="font-black text-slate-900 dark:text-white my-0">
+                No developers here yet
+              </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Follow developers from suggestions to grow this section instantly.
+                Follow developers from suggestions to grow this section
+                instantly.
               </p>
             </Card>
           )}
@@ -219,9 +263,12 @@ export const Friends = () => {
                 <Activity className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-black text-slate-900 dark:text-white my-0">Database Connected</h3>
+                <h3 className="font-black text-slate-900 dark:text-white my-0">
+                  Database Connected
+                </h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
-                  Follow state is now persisting via real-time Firestore listeners. Refresh to see your friends!
+                  Follow state is now persisting via real-time Firestore
+                  listeners. Refresh to see your friends!
                 </p>
               </div>
             </div>

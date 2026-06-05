@@ -14,7 +14,7 @@ import {
   Info,
   HelpCircle,
   Award,
-  UsersRound
+  UsersRound,
 } from "lucide-react";
 import { Github } from "../ui/Icons";
 import { sidebarLinks } from "../../constants";
@@ -35,7 +35,7 @@ const iconMap = {
   Info,
   HelpCircle,
   Award,
-  UsersRound
+  UsersRound,
 };
 
 const isLinkActive = (pathname, path) => {
@@ -88,9 +88,17 @@ export const MobileSidebar = ({ isOpen, close }) => {
             >
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/50">
-                <Link to="/" onClick={close} className="flex items-center gap-2.5">
+                <Link
+                  to="/"
+                  onClick={close}
+                  className="flex items-center gap-2.5"
+                >
                   <div className="w-[34px] h-[34px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-900 border border-slate-800/50 shadow-md">
-                    <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
+                    <img
+                      src={logo}
+                      alt="RankerHub Logo"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <span className="font-montserrat font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight">
                     RankerHub
@@ -122,12 +130,16 @@ export const MobileSidebar = ({ isOpen, close }) => {
                       <div
                         className={`
                           flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-colors duration-205
-                          ${isActive
-                            ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]"
-                            : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"}
+                          ${
+                            isActive
+                              ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]"
+                              : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"
+                          }
                         `}
                       >
-                        <IconComponent className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-violet-400 transition-colors"}`} />
+                        <IconComponent
+                          className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-violet-400 transition-colors"}`}
+                        />
                         <span>{link.label}</span>
                       </div>
                     </Link>

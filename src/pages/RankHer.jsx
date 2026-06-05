@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Sparkles, Quote, Star, Loader2 } from "lucide-react";
-import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
@@ -15,13 +22,12 @@ export const RankHer = () => {
   const [womenUsers, setWomenUsers] = useState(null);
 
   useEffect(() => {
-
     const q = query(
       collection(db, "users"),
       where("onboardingStatus", "==", "complete"),
       where("gender", "==", "female"),
       orderBy("points.totalPoints", "desc"),
-      limit(50)
+      limit(50),
     );
 
     const unsubscribe = onSnapshot(
@@ -36,14 +42,13 @@ export const RankHer = () => {
       (error) => {
         console.error("RankHer leaderboard subscription error:", error);
         setWomenUsers([]);
-      }
+      },
     );
 
     return () => unsubscribe();
   }, [user]);
 
   const renderBody = () => {
-
     if (womenUsers === null) {
       return (
         <div className="flex items-center justify-center py-12 text-slate-400">
@@ -79,7 +84,7 @@ export const RankHer = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
 
               <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
-                {(u.avatar || u.photoURL) ? (
+                {u.avatar || u.photoURL ? (
                   <img
                     src={u.avatar || u.photoURL}
                     alt={u.name}
@@ -104,7 +109,9 @@ export const RankHer = () => {
                     {u.name}
                   </h3>
                   <span className="text-xs font-bold text-slate-400">
-                    {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
+                    {u.githubUsername
+                      ? `@${u.githubUsername}`
+                      : u.college || ""}
                     {u.college && u.githubUsername ? ` • ${u.college}` : ""}
                   </span>
                 </div>
@@ -114,13 +121,20 @@ export const RankHer = () => {
                   <div className="flex items-center justify-between text-xs font-bold">
                     <span className="text-pink-500">XP Progress</span>
                     <span className="text-slate-600 dark:text-pink-400">
-                      {topPoints > 0 ? Math.round(((u.points?.totalPoints || 0) / topPoints) * 100) : 0}%
+                      {topPoints > 0
+                        ? Math.round(
+                            ((u.points?.totalPoints || 0) / topPoints) * 100,
+                          )
+                        : 0}
+                      %
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-2 overflow-hidden">
                     <div
                       className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%` }}
+                      style={{
+                        width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -198,7 +212,7 @@ export const RankHer = () => {
                   </span>
 
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
-                    {(u.avatar || u.photoURL) ? (
+                    {u.avatar || u.photoURL ? (
                       <img
                         src={u.avatar || u.photoURL}
                         alt={u.name}
@@ -217,7 +231,9 @@ export const RankHer = () => {
                         {u.name}
                       </span>
                       <span className="text-[10px] text-pink-500/80 font-bold truncate hidden sm:inline">
-                        {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
+                        {u.githubUsername
+                          ? `@${u.githubUsername}`
+                          : u.college || ""}
                       </span>
                     </div>
                     {/* Progress Bar */}
@@ -225,11 +241,18 @@ export const RankHer = () => {
                       <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                         <div
                           className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%` }}
+                          style={{
+                            width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%`,
+                          }}
                         />
                       </div>
                       <span className="text-[10px] font-bold text-pink-500/80 min-w-[28px] text-right">
-                        {topPoints > 0 ? Math.round(((u.points?.totalPoints || 0) / topPoints) * 100) : 0}%
+                        {topPoints > 0
+                          ? Math.round(
+                              ((u.points?.totalPoints || 0) / topPoints) * 100,
+                            )
+                          : 0}
+                        %
                       </span>
                     </div>
                   </div>

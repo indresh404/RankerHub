@@ -8,12 +8,17 @@ export const fadeUp = (delay = 0, duration = 0.5) => ({
       stiffness: 100,
       damping: 15,
       delay,
-      duration
-    }
-  }
+      duration,
+    },
+  },
 });
 
-export const fadeIn = (direction = "up", type = "tween", delay = 0, duration = 0.5) => ({
+export const fadeIn = (
+  direction = "up",
+  type = "tween",
+  delay = 0,
+  duration = 0.5,
+) => ({
   hidden: {
     x: direction === "left" ? 100 : direction === "right" ? -100 : 0,
     y: direction === "up" ? 100 : direction === "down" ? -100 : 0,
@@ -66,10 +71,10 @@ export const hoverScale = {
     transition: {
       type: "spring",
       stiffness: 400,
-      damping: 10
-    }
+      damping: 10,
+    },
   },
-  tap: { scale: 0.98 }
+  tap: { scale: 0.98 },
 };
 
 export const hoverButton = {
@@ -79,8 +84,8 @@ export const hoverButton = {
     transition: {
       type: "spring",
       stiffness: 400,
-      damping: 10
-    }
+      damping: 10,
+    },
   },
-  tap: { scale: 0.95 }
+  tap: { scale: 0.95 },
 };

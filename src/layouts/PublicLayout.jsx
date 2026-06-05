@@ -18,7 +18,13 @@ export const PublicLayout = () => {
       <PublicNavbar />
 
       {/* Main Content View */}
-      <main className={isHome ? "flex-1 w-full min-w-0 relative z-10" : "flex-1 max-w-7xl min-w-0 w-full mx-auto p-4 md:p-6 lg:p-8 relative z-10 pt-20"}>
+      <main
+        className={
+          isHome
+            ? "flex-1 w-full min-w-0 relative z-10"
+            : "flex-1 max-w-7xl min-w-0 w-full mx-auto p-4 md:p-6 lg:p-8 relative z-10 pt-20"
+        }
+      >
         <Outlet />
       </main>
 

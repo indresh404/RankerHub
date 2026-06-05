@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import { Award, ShieldCheck } from "lucide-react";
-import { query, collection, where, getCountFromServer } from "firebase/firestore";
+import {
+  query,
+  collection,
+  where,
+  getCountFromServer,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import trophyAnimation from "../assets/animations/trophy.json";
@@ -17,14 +22,14 @@ const heatmapColors = [
   "bg-violet-500/10 dark:bg-violet-500/10",
   "bg-violet-500/30 dark:bg-violet-500/30",
   "bg-violet-500/60 dark:bg-violet-500/50",
-  "bg-violet-600 dark:bg-violet-600"
+  "bg-violet-600 dark:bg-violet-600",
 ];
 
 export const Dashboard = () => {
   const { userData } = useAuth();
   const [rank, setRank] = useState("Loading...");
   const [heatmapCells, setHeatmapCells] = useState(
-    Array.from({ length: 168 }, () => 0)
+    Array.from({ length: 168 }, () => 0),
   );
 
   useEffect(() => {
@@ -33,7 +38,7 @@ export const Dashboard = () => {
       if (!username) return;
       try {
         const res = await fetch(
-          `https://github-contributions-api.jogruber.de/v4/${username}?y=last`
+          `https://github-contributions-api.jogruber.de/v4/${username}?y=last`,
         );
         const data = await res.json();
         const contributions = data.contributions || [];
@@ -60,7 +65,7 @@ export const Dashboard = () => {
       try {
         const q = query(
           collection(db, "users"),
-          where("points.totalPoints", ">", userData.points.totalPoints)
+          where("points.totalPoints", ">", userData.points.totalPoints),
         );
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
@@ -76,7 +81,10 @@ export const Dashboard = () => {
   const totalPoints = userData?.points?.totalPoints || 0;
   const devLevel = Math.floor(totalPoints / 250) + 1;
   const nextLevelPoints = devLevel * 250;
-  const levelProgressPercent = Math.min(100, Math.floor((totalPoints / nextLevelPoints) * 100));
+  const levelProgressPercent = Math.min(
+    100,
+    Math.floor((totalPoints / nextLevelPoints) * 100),
+  );
 
   const challenges = [
     {
@@ -84,15 +92,15 @@ export const Dashboard = () => {
       difficulty: "Medium",
       diffColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
       points: "+10 CP",
-      category: "Trees / BFS"
+      category: "Trees / BFS",
     },
     {
       title: "LRU Cache Implementation",
       difficulty: "Hard",
       diffColor: "bg-red-500/10 text-red-500 border-red-500/20",
       points: "+20 CP",
-      category: "Design / DLL"
-    }
+      category: "Design / DLL",
+    },
   ];
 
   return (
@@ -107,13 +115,18 @@ export const Dashboard = () => {
         <Card className="lg:col-span-2 flex flex-col sm:flex-row items-center justify-between gap-6 p-8 bg-gradient-to-br from-violet-600/10 via-indigo-600/10 to-blue-600/10 border-violet-500/15">
           <div className="space-y-4 text-center sm:text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-violet-600/20 text-violet-700 dark:text-violet-400">
-              <Award className="w-4 h-4 animate-bounce" /> Level {devLevel} Developer
+              <Award className="w-4 h-4 animate-bounce" /> Level {devLevel}{" "}
+              Developer
             </div>
             <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-tight my-0">
               Welcome back, {userData?.name || "Developer"}!
             </h2>
             <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-md font-medium">
-              You are currently ranked <span className="font-bold text-slate-800 dark:text-white">{rank}</span> globally. Complete daily arena challenges to boost your rank!
+              You are currently ranked{" "}
+              <span className="font-bold text-slate-800 dark:text-white">
+                {rank}
+              </span>{" "}
+              globally. Complete daily arena challenges to boost your rank!
             </p>
             <div className="pt-2 flex items-center justify-center sm:justify-start gap-4">
               <div className="w-full max-w-[200px] h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -122,11 +135,17 @@ export const Dashboard = () => {
                   style={{ width: `${levelProgressPercent}%` }}
                 />
               </div>
-              <span className="text-xs font-bold text-slate-500">{totalPoints} / {nextLevelPoints} XP</span>
+              <span className="text-xs font-bold text-slate-500">
+                {totalPoints} / {nextLevelPoints} XP
+              </span>
             </div>
           </div>
           <div className="w-44 h-44 flex-shrink-0 flex items-center justify-center">
-            <LottiePlayer animationData={trophyAnimation} loop={true} className="w-full h-full" />
+            <LottiePlayer
+              animationData={trophyAnimation}
+              loop={true}
+              className="w-full h-full"
+            />
           </div>
         </Card>
 
@@ -140,13 +159,31 @@ export const Dashboard = () => {
             </h3>
             <div className="space-y-2.5 pt-2">
               {[
-                { label: "GitRank (GitHub)", points: userData?.points?.gitRankPoints || 0, color: "bg-blue-500" },
-                { label: "CodingVerse", points: userData?.points?.codingVersePoints || 0, color: "bg-purple-500" },
-                { label: "Streak Points", points: userData?.points?.streakPoints || 0, color: "bg-orange-500" },
-                { label: "Referral Points", points: userData?.points?.referralPoints || 0, color: "bg-emerald-500" }
+                {
+                  label: "GitRank (GitHub)",
+                  points: userData?.points?.gitRankPoints || 0,
+                  color: "bg-blue-500",
+                },
+                {
+                  label: "CodingVerse",
+                  points: userData?.points?.codingVersePoints || 0,
+                  color: "bg-purple-500",
+                },
+                {
+                  label: "Streak Points",
+                  points: userData?.points?.streakPoints || 0,
+                  color: "bg-orange-500",
+                },
+                {
+                  label: "Referral Points",
+                  points: userData?.points?.referralPoints || 0,
+                  color: "bg-emerald-500",
+                },
               ].map((skill, idx) => {
                 const maxPoints = Math.max(10, totalPoints);
-                const percent = Math.min(100, Math.floor((skill.points / maxPoints) * 100)) || 0;
+                const percent =
+                  Math.min(100, Math.floor((skill.points / maxPoints) * 100)) ||
+                  0;
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-500">
@@ -185,7 +222,8 @@ export const Dashboard = () => {
               </span>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Consistent contributions directly increase your GitRank rating points.
+              Consistent contributions directly increase your GitRank rating
+              points.
             </p>
           </div>
           <div className="my-6 grid grid-flow-col grid-rows-7 gap-1.5 overflow-x-auto py-2 scrollbar-none">
@@ -207,7 +245,10 @@ export const Dashboard = () => {
               </div>
               <span>More</span>
             </div>
-            <span>Activity logged from github.com/{userData?.githubUsername || "developer"}</span>
+            <span>
+              Activity logged from github.com/
+              {userData?.githubUsername || "developer"}
+            </span>
           </div>
         </Card>
 
@@ -228,8 +269,12 @@ export const Dashboard = () => {
               >
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">{challenge.category}</span>
-                    <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full border ${challenge.diffColor}`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      {challenge.category}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full border ${challenge.diffColor}`}
+                    >
                       {challenge.difficulty}
                     </span>
                   </div>

@@ -6,17 +6,17 @@ import hourglassAnim from "../../assets/animations/hourglass_loading.json";
 export const Loader = ({
   type = "hourglass", // hourglass or skeleton
   size = "md", // sm, md, lg
-  text = "Loading..."
+  text = "Loading...",
 }) => {
   const animations = {
     skeleton: skeletonAnim,
-    hourglass: hourglassAnim
+    hourglass: hourglassAnim,
   };
 
   const sizes = {
     sm: "w-16 h-16",
     md: "w-32 h-32",
-    lg: "w-48 h-48"
+    lg: "w-48 h-48",
   };
 
   return (

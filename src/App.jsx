@@ -12,8 +12,8 @@ function App() {
   // Convert pathname to hash router format to prevent routing bugs
   useEffect(() => {
     const path = window.location.pathname;
-    if (path !== '/' && path !== '/index.html') {
-      window.location.replace('/#' + path + window.location.hash);
+    if (path !== "/" && path !== "/index.html") {
+      window.location.replace("/#" + path + window.location.hash);
     }
   }, []);
 

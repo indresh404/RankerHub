@@ -8,8 +8,10 @@ export const ThemeProvider = ({ children }) => {
     // Check local storage or default to system preference
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme) return savedTheme;
-    
-    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     return systemPrefersDark ? "dark" : "light";
   });
 
@@ -30,7 +32,9 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === "dark" }}>
+    <ThemeContext.Provider
+      value={{ theme, toggleTheme, isDark: theme === "dark" }}
+    >
       {children}
     </ThemeContext.Provider>
   );

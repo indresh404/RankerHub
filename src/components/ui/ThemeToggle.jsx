@@ -27,7 +27,7 @@ export const ThemeToggle = ({ className = "" }) => {
         animate={{
           y: isDark ? 40 : 0,
           opacity: isDark ? 0 : 1,
-          rotate: isDark ? 90 : 0
+          rotate: isDark ? 90 : 0,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="absolute"
@@ -40,7 +40,7 @@ export const ThemeToggle = ({ className = "" }) => {
         animate={{
           y: isDark ? 0 : -40,
           opacity: isDark ? 1 : 0,
-          rotate: isDark ? 0 : -90
+          rotate: isDark ? 0 : -90,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="absolute"

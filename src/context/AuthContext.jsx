@@ -1,16 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from "react";
-import {
-  onAuthStateChanged,
-  getAdditionalUserInfo
-} from "firebase/auth";
+import { onAuthStateChanged, getAdditionalUserInfo } from "firebase/auth";
 import {
   doc,
   getDoc,
   setDoc,
   updateDoc,
   onSnapshot,
-  writeBatch
+  writeBatch,
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
@@ -23,15 +20,15 @@ const checkAndUpdateStreak = async (data, docRef) => {
   if (!data || data.onboardingStatus !== "complete") return;
   const now = new Date();
   const lastLoginDate = data.lastLogin ? new Date(data.lastLogin) : null;
-  
+
   if (!lastLoginDate || lastLoginDate.toDateString() !== now.toDateString()) {
     let newStreak = data.streak || 1;
     let newStreakPoints = data.points?.streakPoints || 0;
-    
+
     if (lastLoginDate) {
       const diffTime = Math.abs(now - lastLoginDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 1) {
         newStreak += 1;
         newStreakPoints += 10;
@@ -41,12 +38,13 @@ const checkAndUpdateStreak = async (data, docRef) => {
     } else {
       newStreak = 1;
     }
-    
-    const newTotalPoints = (data.points?.gitRankPoints || 0) + 
-                           (data.points?.referralPoints || 0) + 
-                           (data.points?.codingVersePoints || 0) + 
-                           newStreakPoints;
-                           
+
+    const newTotalPoints =
+      (data.points?.gitRankPoints || 0) +
+      (data.points?.referralPoints || 0) +
+      (data.points?.codingVersePoints || 0) +
+      newStreakPoints;
+
     const newLongestStreak = Math.max(data.longestStreak || 0, newStreak);
 
     try {
@@ -55,9 +53,14 @@ const checkAndUpdateStreak = async (data, docRef) => {
         longestStreak: newLongestStreak,
         lastLogin: now.toISOString(),
         "points.streakPoints": newStreakPoints,
-        "points.totalPoints": newTotalPoints
+        "points.totalPoints": newTotalPoints,
       });
-      console.log("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
+      console.log(
+        "Streak updated successfully. New Streak:",
+        newStreak,
+        "| Longest:",
+        newLongestStreak,
+      );
     } catch (err) {
       console.error("Failed to update streak:", err);
     }
@@ -85,30 +88,35 @@ export const AuthProvider = ({ children }) => {
 
       if (currentUser) {
         setUser(currentUser);
-        const token = sessionStorage.getItem(`gh_token_${currentUser.uid}`) || sessionStorage.getItem("gh_access_token");
+        const token =
+          sessionStorage.getItem(`gh_token_${currentUser.uid}`) ||
+          sessionStorage.getItem("gh_access_token");
         if (token) {
           setGhAccessToken(token);
         }
-        
-        const userDocRef = doc(db, "users", currentUser.uid);
-        
-        unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setUserData(data);
-            setIsOnboarding(data.onboardingStatus === "incomplete");
-            setLoading(false);
-            checkAndUpdateStreak(data, userDocRef);
-          } else {
-            setUserData(null);
-            setIsOnboarding(true);
-            setLoading(false);
-          }
-        }, (error) => {
-          console.error("Real-time profile listener error:", error);
-          setLoading(false);
-        });
 
+        const userDocRef = doc(db, "users", currentUser.uid);
+
+        unsubscribeSnapshot = onSnapshot(
+          userDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              setUserData(data);
+              setIsOnboarding(data.onboardingStatus === "incomplete");
+              setLoading(false);
+              checkAndUpdateStreak(data, userDocRef);
+            } else {
+              setUserData(null);
+              setIsOnboarding(true);
+              setLoading(false);
+            }
+          },
+          (error) => {
+            console.error("Real-time profile listener error:", error);
+            setLoading(false);
+          },
+        );
       } else {
         setUser(null);
         setUserData(null);
@@ -126,12 +134,21 @@ export const AuthProvider = ({ children }) => {
   const login = async (requestRepoScope = true) => {
     setLoading(true);
     try {
-      const { user: authUser, accessToken, result } = await signInWithGitHub(requestRepoScope);
+      const {
+        user: authUser,
+        accessToken,
+        result,
+      } = await signInWithGitHub(requestRepoScope);
 
       const additionalInfo = getAdditionalUserInfo(result);
-      const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();
+      const githubUsername = (
+        additionalInfo?.username ||
+        authUser.displayName ||
+        ""
+      ).trim();
       const githubId = additionalInfo?.profile?.id || null;
-      const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
+      const avatar =
+        additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
       // Save the token to sessionStorage and state to keep user authenticated across refreshes
       sessionStorage.setItem("gh_access_token", accessToken);
@@ -157,19 +174,23 @@ export const AuthProvider = ({ children }) => {
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
-            gitRankPoints: 0, 
+            gitRankPoints: 0,
             codingVersePoints: 0,
             streakPoints: 0,
             referralPoints: 0,
-            totalPoints: 0
-          }
+            totalPoints: 0,
+          },
         };
         await setDoc(userDocRef, skeletalUser);
       } else {
-        await setDoc(userDocRef, {
-          lastLogin: new Date().toISOString(),
-          ...(requestRepoScope && { privateRepoSyncEnabled: true })
-        }, { merge: true });
+        await setDoc(
+          userDocRef,
+          {
+            lastLogin: new Date().toISOString(),
+            ...(requestRepoScope && { privateRepoSyncEnabled: true }),
+          },
+          { merge: true },
+        );
       }
 
       return authUser;
@@ -204,23 +225,34 @@ export const AuthProvider = ({ children }) => {
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {
-      const profileRes = await axios.get(`https://api.github.com/users/${username}`, { headers });
+      const profileRes = await axios.get(
+        `https://api.github.com/users/${username}`,
+        { headers },
+      );
       const publicRepos = profileRes.data.public_repos || 0;
       const followers = profileRes.data.followers || 0;
-      
+
       let stars = 0;
       let primaryLanguage = "JavaScript";
       try {
-        const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&type=owner`, { headers });
-        stars = reposRes.data.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
-        
+        const reposRes = await axios.get(
+          `https://api.github.com/users/${username}/repos?per_page=100&type=owner`,
+          { headers },
+        );
+        stars = reposRes.data.reduce(
+          (sum, r) => sum + (r.stargazers_count || 0),
+          0,
+        );
+
         const langCounts = {};
-        reposRes.data.forEach(r => {
+        reposRes.data.forEach((r) => {
           if (r.language) {
             langCounts[r.language] = (langCounts[r.language] || 0) + 1;
           }
         });
-        const sortedLangs = Object.keys(langCounts).sort((a, b) => langCounts[b] - langCounts[a]);
+        const sortedLangs = Object.keys(langCounts).sort(
+          (a, b) => langCounts[b] - langCounts[a],
+        );
         if (sortedLangs.length > 0) {
           primaryLanguage = sortedLangs[0];
         }
@@ -230,32 +262,50 @@ export const AuthProvider = ({ children }) => {
 
       let commits = 0;
       try {
-        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${username}`, { headers });
+        const commitsRes = await axios.get(
+          `https://api.github.com/search/commits?q=author:${username}`,
+          { headers },
+        );
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
+        console.warn(
+          "Commits retrieval failed; score will be incomplete until next refresh:",
+          err,
+        );
         commits = 0;
       }
 
       let prs = 0;
       try {
-        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${username}+type:pr`, { headers });
+        const prsRes = await axios.get(
+          `https://api.github.com/search/issues?q=author:${username}+type:pr`,
+          { headers },
+        );
         prs = prsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
+        console.warn(
+          "PRs retrieval failed; score will be incomplete until next refresh:",
+          err,
+        );
         prs = 0;
       }
 
       let reviews = 0;
       try {
-        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${username}`, { headers });
+        const reviewsRes = await axios.get(
+          `https://api.github.com/search/issues?q=reviewed-by:${username}`,
+          { headers },
+        );
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
+        console.warn(
+          "Reviews retrieval failed; score will be incomplete until next refresh:",
+          err,
+        );
         reviews = 0;
       }
 
-      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10);
+      const gitRankPoints = commits * 2 + prs * 5 + reviews * 10;
 
       return {
         commits,
@@ -265,7 +315,7 @@ export const AuthProvider = ({ children }) => {
         stars,
         followers,
         primaryLanguage,
-        gitRankPoints
+        gitRankPoints,
       };
     } catch (error) {
       console.error("Error executing GitHub stats fetcher snapshot:", error);
@@ -277,7 +327,7 @@ export const AuthProvider = ({ children }) => {
         stars: 0,
         followers: 0,
         primaryLanguage: "JavaScript",
-        gitRankPoints: 0
+        gitRankPoints: 0,
       };
     }
   };
@@ -310,11 +360,15 @@ export const AuthProvider = ({ children }) => {
       const currentStreakPoints = liveData.points?.streakPoints || 0;
 
       const newGitRankPoints = ghStats.gitRankPoints;
-      const newTotalPoints = newGitRankPoints + currentReferralPoints + currentCodingVersePoints + currentStreakPoints;
+      const newTotalPoints =
+        newGitRankPoints +
+        currentReferralPoints +
+        currentCodingVersePoints +
+        currentStreakPoints;
 
       // Phase 2: Issue Atomic Batch Write
       const batch = writeBatch(db);
-      
+
       batch.update(userRef, {
         "githubStats.commits": ghStats.commits,
         "githubStats.prs": ghStats.prs,
@@ -325,20 +379,35 @@ export const AuthProvider = ({ children }) => {
         "githubStats.primaryLanguage": ghStats.primaryLanguage,
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
-        "lastSync": new Date().toISOString()
+        lastSync: new Date().toISOString(),
       });
 
       // Execute atomic transaction
       await batch.commit();
 
-      console.log("Background GitHub sync completed successfully via atomic batch.");
+      console.log(
+        "Background GitHub sync completed successfully via atomic batch.",
+      );
     } catch (error) {
       console.error("Background GitHub sync failed:", error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userData,
+        loading,
+        isOnboarding,
+        login,
+        logout,
+        fetchGitHubStats,
+        syncGitHubData,
+        ghAccessToken,
+        setUserData,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -69,8 +69,7 @@ export const filterByLanguage = (users, language) => {
   if (!language || language === "All") return users;
   return users.filter(
     (user) =>
-      user.language &&
-      user.language.toLowerCase() === language.toLowerCase()
+      user.language && user.language.toLowerCase() === language.toLowerCase(),
   );
 };
 
@@ -84,9 +83,7 @@ export const filterByRole = (users, role) => {
   if (!role) return users;
   const roleSearch = role.toLowerCase();
   return users.filter(
-    (user) =>
-      user.role &&
-      user.role.toLowerCase().includes(roleSearch)
+    (user) => user.role && user.role.toLowerCase().includes(roleSearch),
   );
 };
 
@@ -134,21 +131,21 @@ export const getSearchSuggestions = (users, query) => {
       suggestions.add({
         type: "name",
         value: user.name,
-        display: `${user.name} (@${user.username})`
+        display: `${user.name} (@${user.username})`,
       });
     }
     if (user.username.toLowerCase().startsWith(searchTerm)) {
       suggestions.add({
         type: "username",
         value: user.username,
-        display: `@${user.username}`
+        display: `@${user.username}`,
       });
     }
     if (user.language && user.language.toLowerCase().includes(searchTerm)) {
       suggestions.add({
         type: "language",
         value: user.language,
-        display: `Language: ${user.language}`
+        display: `Language: ${user.language}`,
       });
     }
   });

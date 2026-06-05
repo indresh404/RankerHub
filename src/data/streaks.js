@@ -5,7 +5,7 @@ export const streakHistory = [
   { day: "Thu", status: "completed", date: "May 20" },
   { day: "Fri", status: "completed", date: "May 21" },
   { day: "Sat", status: "current", date: "May 22" },
-  { day: "Sun", status: "pending", date: "May 23" }
+  { day: "Sun", status: "pending", date: "May 23" },
 ];
 
 export const focusStats = {
@@ -14,7 +14,7 @@ export const focusStats = {
   longestStreak: 45,
   dailyGoalMins: 60,
   dailyProgressMins: 45,
-  focusModeSessions: 24
+  focusModeSessions: 24,
 };
 
 export const habitCards = [
@@ -26,7 +26,7 @@ export const habitCards = [
     streak: 12,
     category: "Coding",
     progress: 100,
-    icon: "git"
+    icon: "git",
   },
   {
     id: "h2",
@@ -36,7 +36,7 @@ export const habitCards = [
     streak: 5,
     category: "Problem Solving",
     progress: 50,
-    icon: "code"
+    icon: "code",
   },
   {
     id: "h3",
@@ -46,7 +46,7 @@ export const habitCards = [
     streak: 8,
     category: "Learning",
     progress: 100,
-    icon: "book"
+    icon: "book",
   },
   {
     id: "h4",
@@ -56,8 +56,8 @@ export const habitCards = [
     streak: 3,
     category: "Collaboration",
     progress: 75,
-    icon: "eye"
-  }
+    icon: "eye",
+  },
 ];
 
 export const weeklyHeatmap = [
@@ -65,5 +65,5 @@ export const weeklyHeatmap = [
   { week: 1, days: [1, 2, 0, 1, 1, 0, 2] },
   { week: 2, days: [2, 1, 1, 2, 0, 1, 1] },
   { week: 3, days: [1, 1, 0, 2, 2, 1, 0] },
-  { week: 4, days: [2, 2, 1, 1, 1, 2, 2] }
+  { week: 4, days: [2, 2, 1, 1, 1, 2, 2] },
 ];

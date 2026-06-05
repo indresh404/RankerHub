@@ -4,7 +4,12 @@ import { ArrowUpRight, Check, UserPlus, UsersRound } from "lucide-react";
 import Card from "../ui/Card";
 import GradientButton from "../ui/GradientButton";
 
-export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact = false }) => {
+export const DeveloperCard = ({
+  developer,
+  isFollowing,
+  onToggleFollow,
+  compact = false,
+}) => {
   return (
     <Card className={`${compact ? "p-4" : "p-5"} h-full flex flex-col gap-4`}>
       <div className="flex items-start gap-4">
@@ -67,7 +72,9 @@ export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact 
 
       <div
         className={`mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-3 ${
-          compact ? "flex-col sm:flex-row sm:items-center sm:justify-between" : "flex-col items-stretch"
+          compact
+            ? "flex-col sm:flex-row sm:items-center sm:justify-between"
+            : "flex-col items-stretch"
         }`}
       >
         <div className="text-xs text-slate-400 dark:text-slate-500 font-semibold space-y-1">
@@ -75,7 +82,11 @@ export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact 
             <UsersRound className="w-3.5 h-3.5 text-violet-500" />
             {developer.mutualFriends} mutual friends
           </span>
-          {!compact && <span className="block truncate max-w-[220px]">{developer.activity}</span>}
+          {!compact && (
+            <span className="block truncate max-w-[220px]">
+              {developer.activity}
+            </span>
+          )}
         </div>
 
         <GradientButton

@@ -137,7 +137,11 @@ export const PublicNavbar = () => {
             className="nav-logo-link"
           >
             <div className="w-[32px] h-[32px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
-              <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
+              <img
+                src={logo}
+                alt="RankerHub Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <span className="font-caesar text-lg tracking-widest text-slate-900 dark:text-white">
               RankerHub
@@ -148,7 +152,11 @@ export const PublicNavbar = () => {
 
           {/* Navigation Links with Active Sliding Pill */}
           <div className="nav-items">
-            <div ref={activePillRef} className="active-pill" id="active-pill"></div>
+            <div
+              ref={activePillRef}
+              className="active-pill"
+              id="active-pill"
+            ></div>
             {navItems.map((item, idx) => (
               <button
                 key={idx}
@@ -237,7 +245,11 @@ export const PublicNavbar = () => {
               className="nav-logo-link"
             >
               <div className="w-[30px] h-[30px] rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
-                <img src={logo} alt="RankerHub Logo" className="w-full h-full object-cover" />
+                <img
+                  src={logo}
+                  alt="RankerHub Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="font-caesar text-base tracking-widest text-slate-900 dark:text-white">
                 RankerHub
@@ -293,7 +305,11 @@ export const PublicNavbar = () => {
                 onClick={() => setMobileExpanded(!mobileExpanded)}
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileExpanded ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>

@@ -50,14 +50,19 @@ export const CodingOwl = () => {
   };
 
   const toggleHabitComplete = (id) => {
-    setHabits(prev => prev.map(habit => {
-      if (habit.id === id) {
-        const newProgress = habit.progress === 100 ? 0 : 100;
-        const newStreak = newProgress === 100 ? habit.streak + 1 : Math.max(0, habit.streak - 1);
-        return { ...habit, progress: newProgress, streak: newStreak };
-      }
-      return habit;
-    }));
+    setHabits((prev) =>
+      prev.map((habit) => {
+        if (habit.id === id) {
+          const newProgress = habit.progress === 100 ? 0 : 100;
+          const newStreak =
+            newProgress === 100
+              ? habit.streak + 1
+              : Math.max(0, habit.streak - 1);
+          return { ...habit, progress: newProgress, streak: newStreak };
+        }
+        return habit;
+      }),
+    );
   };
 
   return (
@@ -72,7 +77,6 @@ export const CodingOwl = () => {
 
       {/* Mascot & Streak Highlight */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Mascot bubble */}
         <Card className="lg:col-span-2 p-8 flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-orange-500/10 via-slate-50/0 to-slate-50/0 dark:from-orange-500/5 dark:via-slate-900/0 dark:to-slate-900/0 border-orange-500/15">
           {/* Mascot Mascot representation */}
@@ -84,13 +88,17 @@ export const CodingOwl = () => {
             <h3 className="text-xl font-extrabold text-slate-950 dark:text-white my-0">
               Mascot: Oliver the Owl
             </h3>
-            
+
             <div className="bg-white/80 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/45 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-semibold italic relative">
-              "Whoo-whoo! You've logged code for {userStreak} consecutive days, {userName}. Oliver is proud! Maintain your streak today to earn a 1.5x points multiplier."
+              "Whoo-whoo! You've logged code for {userStreak} consecutive days,{" "}
+              {userName}. Oliver is proud! Maintain your streak today to earn a
+              1.5x points multiplier."
             </div>
-            
+
             <div className="flex justify-center sm:justify-start items-center gap-4 text-xs font-bold text-slate-400">
-              <span>Mood: <span className="text-orange-500">Ecstatic! 🔥</span></span>
+              <span>
+                Mood: <span className="text-orange-500">Ecstatic! 🔥</span>
+              </span>
               <span>•</span>
               <span>Next Check-in: 8 hours remaining</span>
             </div>
@@ -100,7 +108,9 @@ export const CodingOwl = () => {
         {/* Focus Timer Session Card */}
         <Card className="p-6 flex flex-col justify-between">
           <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-400 uppercase">Focus Arena</span>
+            <span className="text-xs font-bold text-slate-400 uppercase">
+              Focus Arena
+            </span>
             <h3 className="text-lg font-extrabold text-slate-950 dark:text-white my-0">
               Focus Mode Session
             </h3>
@@ -123,12 +133,13 @@ export const CodingOwl = () => {
             <button
               onClick={toggleTimer}
               className={`flex-1 py-2.5 rounded-xl font-bold border text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-                timerActive 
-                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500" 
+                timerActive
+                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500"
                   : "bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white border-orange-500"
               }`}
             >
-              <Timer className="w-4 h-4" /> {timerActive ? "Pause Focus" : "Start Focus"}
+              <Timer className="w-4 h-4" />{" "}
+              {timerActive ? "Pause Focus" : "Start Focus"}
             </button>
             <button
               onClick={resetTimer}
@@ -138,7 +149,6 @@ export const CodingOwl = () => {
             </button>
           </div>
         </Card>
-
       </div>
 
       {/* Habits Checklist Grid */}
@@ -146,16 +156,19 @@ export const CodingOwl = () => {
         <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
           Your Habit Dashboard
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {habits.map((habit) => (
-            <Card key={habit.id} className="p-5 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50 hover:border-orange-500/25 transition-all">
+            <Card
+              key={habit.id}
+              className="p-5 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50 hover:border-orange-500/25 transition-all"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20">
                     {habit.frequency}
                   </span>
-                  
+
                   <span className="text-xs font-bold text-orange-500 dark:text-orange-400 flex items-center gap-0.5">
                     🔥 {habit.streak}d
                   </span>
@@ -164,7 +177,7 @@ export const CodingOwl = () => {
                 <h4 className="font-extrabold text-slate-900 dark:text-white leading-tight my-0">
                   {habit.title}
                 </h4>
-                
+
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
                   {habit.description}
                 </p>
@@ -174,11 +187,17 @@ export const CodingOwl = () => {
               <div className="mt-6 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
                 <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
                   <span>Today's status</span>
-                  <span className={habit.progress === 100 ? "text-emerald-500" : "text-slate-400"}>
+                  <span
+                    className={
+                      habit.progress === 100
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                    }
+                  >
                     {habit.progress === 100 ? "Completed" : "In Progress"}
                   </span>
                 </div>
-                
+
                 <button
                   onClick={() => toggleHabitComplete(habit.id)}
                   className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
@@ -189,7 +208,8 @@ export const CodingOwl = () => {
                 >
                   {habit.progress === 100 ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3px]" /> Completed
+                      <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3px]" />{" "}
+                      Completed
                     </>
                   ) : (
                     <>
@@ -214,7 +234,9 @@ export const CodingOwl = () => {
               A historical log of your daily check-in marks.
             </p>
           </div>
-          <span className="text-xs font-bold text-orange-500">Last 4 Weeks</span>
+          <span className="text-xs font-bold text-orange-500">
+            Last 4 Weeks
+          </span>
         </div>
 
         <div className="mt-6 grid grid-cols-4 gap-6">
@@ -223,7 +245,7 @@ export const CodingOwl = () => {
               <span className="text-xs font-bold text-slate-400 block text-center">
                 Week {week.week}
               </span>
-              
+
               <div className="flex justify-between items-center gap-1.5 py-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-950/30 border border-slate-200/40 dark:border-slate-800/40">
                 {week.days.map((day, dayIdx) => (
                   <div
@@ -258,10 +280,8 @@ export const CodingOwl = () => {
           </div>
         </div>
       </Card>
-
     </div>
   );
 };
 
 export default CodingOwl;
-

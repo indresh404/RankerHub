@@ -6,7 +6,7 @@ export const ContributionCTA = () => {
     <div className="relative overflow-hidden p-8 rounded-2xl border border-violet-500/20 dark:border-violet-500/10 bg-gradient-to-r from-violet-500/5 to-indigo-500/5 dark:from-violet-500/5 dark:to-indigo-500/5 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg group">
       {/* Floating glow inside card */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-24 bg-violet-500/10 rounded-full blur-3xl -z-10 pointer-events-none transition-all duration-300 group-hover:scale-125" />
-      
+
       {/* Background Dots */}
       <div className="absolute inset-0 bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03] dark:opacity-[0.05] pointer-events-none" />
 
@@ -15,10 +15,11 @@ export const ContributionCTA = () => {
           Want to contribute to RankerHub?
         </h3>
         <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold max-w-xl my-0">
-          Join our open-source community, help squash bugs, optimize layouts, or add new challenges and help build the future of developer rankings.
+          Join our open-source community, help squash bugs, optimize layouts, or
+          add new challenges and help build the future of developer rankings.
         </p>
       </div>
-      
+
       <a
         href="https://github.com/indresh404/RankerHub"
         target="_blank"

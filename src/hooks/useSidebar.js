@@ -42,6 +42,6 @@ export const useSidebar = () => {
     toggleCollapse,
     toggleMobile,
     closeMobile,
-    setIsCollapsed
+    setIsCollapsed,
   };
 };

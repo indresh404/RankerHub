@@ -12,14 +12,16 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
     const fetchContributors = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://api.github.com/repos/indresh404/RankerHub/contributors");
+        const res = await fetch(
+          "https://api.github.com/repos/indresh404/RankerHub/contributors",
+        );
         if (!res.ok) {
           throw new Error(`Failed to fetch: ${res.status}`);
         }
         const data = await res.json();
-        
+
         const sorted = data.sort((a, b) => b.contributions - a.contributions);
-        
+
         setContributors(sorted);
         setError(null);
       } catch (err) {
@@ -55,13 +57,18 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
       <div className="p-6 rounded-xl border border-rose-500/20 bg-rose-500/5 text-center text-xs text-slate-650 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
         <AlertCircle className="w-5 h-5 text-rose-500" />
         <div>
-          <p className="font-bold text-rose-500 mb-1">Could not fetch contributors dynamically</p>
-          <p>GitHub API rate limit exceeded or network offline. You can view all activity directly on GitHub.</p>
+          <p className="font-bold text-rose-500 mb-1">
+            Could not fetch contributors dynamically
+          </p>
+          <p>
+            GitHub API rate limit exceeded or network offline. You can view all
+            activity directly on GitHub.
+          </p>
         </div>
-        <a 
-          href="https://github.com/indresh404/RankerHub/graphs/contributors" 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href="https://github.com/indresh404/RankerHub/graphs/contributors"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-block mt-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-850 hover:bg-slate-150 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition duration-200 font-bold"
         >
           View Contributors on GitHub
@@ -74,7 +81,9 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
     return (
       <div className="p-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/20 dark:bg-slate-950/20 text-center text-xs text-slate-500 dark:text-slate-400">
         <p className="font-bold">No external contributors found yet.</p>
-        <p className="mt-1">Be the first to submit a pull request and join the community!</p>
+        <p className="mt-1">
+          Be the first to submit a pull request and join the community!
+        </p>
       </div>
     );
   }
@@ -83,7 +92,7 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
   const restContributors = contributors.slice(3);
 
   return (
-    <motion.div 
+    <motion.div
       variants={staggerContainer}
       initial="hidden"
       whileInView="visible"
@@ -124,11 +133,11 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
                   <div className="relative w-16 h-16 sm:w-18 sm:h-18 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                     {/* Circle Avatar Frame */}
                     <div className="w-full h-full rounded-full overflow-hidden border-2 border-slate-250 dark:border-slate-800 group-hover:border-violet-500/80 transition-colors duration-300 shadow-sm relative">
-                      <img 
-                        src={contrib.avatar_url} 
-                        alt={contrib.login} 
-                        className="w-full h-full object-cover" 
-                        loading="lazy" 
+                      <img
+                        src={contrib.avatar_url}
+                        alt={contrib.login}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
@@ -144,7 +153,8 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
                       {contrib.login}
                     </span>
                     <span className="block text-[9px] font-extrabold text-slate-400 dark:text-slate-550">
-                      {contrib.contributions} {contrib.contributions === 1 ? 'commit' : 'commits'}
+                      {contrib.contributions}{" "}
+                      {contrib.contributions === 1 ? "commit" : "commits"}
                     </span>
                   </div>
                 </motion.a>

@@ -12,7 +12,7 @@ export const DashboardLayout = () => {
     isMobileOpen,
     toggleCollapse,
     toggleMobile,
-    closeMobile
+    closeMobile,
   } = useSidebar();
 
   return (

@@ -39,7 +39,10 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   // Close notifications dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -80,7 +83,6 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
 
   return (
     <nav className="sticky top-0 z-30 h-16 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md shadow-sm transition-all duration-300 px-4 md:px-6 flex items-center justify-between relative">
-
       {/* Mobile Search Overlay */}
       <AnimatePresence>
         {isMobileSearchOpen && (
@@ -132,7 +134,9 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                               {user.name}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                              @{user.username}{" • "}{user.language}
+                              @{user.username}
+                              {" • "}
+                              {user.language}
                             </p>
                           </div>
                         </button>
@@ -146,7 +150,9 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                         // ✅ Yeh daalo:
                         onClick={() => {
                           if (searchQuery.trim()) {
-                            navigate(`/gitrank?search=${encodeURIComponent(searchQuery)}`);
+                            navigate(
+                              `/gitrank?search=${encodeURIComponent(searchQuery)}`,
+                            );
                             setSearchQuery("");
                             setIsMobileSearchOpen(false);
                             setShowSearchResults(false);
@@ -181,7 +187,11 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
           onClick={toggleMobile}
           className="md:hidden p-2 rounded-xl border border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 cursor-pointer"
         >
-          {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {isMobileOpen ? (
+            <X className="w-5 h-5" />
+          ) : (
+            <Menu className="w-5 h-5" />
+          )}
         </button>
 
         {/* Animated Greeting */}
@@ -194,13 +204,24 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
             Welcome back
           </span>
           <span className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 mt-0.5 block">
-            {greeting}, <span className="text-violet-600 dark:text-violet-400 font-extrabold">{userData?.name || user?.displayName || userData?.githubUsername || "Developer"}</span> 👋
+            {greeting},{" "}
+            <span className="text-violet-600 dark:text-violet-400 font-extrabold">
+              {userData?.name ||
+                user?.displayName ||
+                userData?.githubUsername ||
+                "Developer"}
+            </span>{" "}
+            👋
           </span>
         </motion.div>
       </div>
 
       {/* Middle: Search bar */}
-      <form onSubmit={handleSearchSubmit} className="max-w-xs md:max-w-md w-full mx-4 relative hidden md:block" ref={searchRef}>
+      <form
+        onSubmit={handleSearchSubmit}
+        className="max-w-xs md:max-w-md w-full mx-4 relative hidden md:block"
+        ref={searchRef}
+      >
         <Search className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 z-10" />
         <input
           type="text"
@@ -238,8 +259,10 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                         {user.name}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-
-                        @{user.username}{" • "}{user.language}{" • "}#{user.rank}
+                        @{user.username}
+                        {" • "}
+                        {user.language}
+                        {" • "}#{user.rank}
                       </p>
                     </div>
                     <div className="text-right">
@@ -313,7 +336,9 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
               >
                 {/* Header */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">Notifications</h3>
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                    Notifications
+                  </h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
@@ -330,8 +355,9 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        className={`p-4 transition-colors relative group flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${!n.read ? "bg-violet-50/20 dark:bg-violet-500/5" : ""
-                          }`}
+                        className={`p-4 transition-colors relative group flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                          !n.read ? "bg-violet-50/20 dark:bg-violet-500/5" : ""
+                        }`}
                       >
                         {/* Red/Green status light */}
                         {!n.read && (
@@ -387,16 +413,22 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
         </div>
 
         {/* Profile Avatar */}
-        <Link to="/dashboard/profile" className="flex items-center gap-2 group cursor-pointer">
+        <Link
+          to="/dashboard/profile"
+          className="flex items-center gap-2 group cursor-pointer"
+        >
           <div className="w-9 h-9 rounded-xl overflow-hidden ring-2 ring-violet-500/20 group-hover:ring-violet-500/50 transition-all duration-200">
             <img
-              src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"}
+              src={
+                userData?.avatar ||
+                user?.photoURL ||
+                "https://avatars.githubusercontent.com/u/9919?v=4"
+              }
               alt="User Profile"
               className="w-full h-full object-cover"
             />
           </div>
         </Link>
-
       </div>
     </nav>
   );
