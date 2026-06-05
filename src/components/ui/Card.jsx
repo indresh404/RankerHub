@@ -1,15 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { hoverScale } from "../../utils/motion";
 
-export const Card = ({
-  children,
-  className = "",
-  glow = true,
-  onClick,
-  hoverable: _hoverable = !!onClick,
-  ...props
-}) => {
+function CardComponent(props, ref) {
+  const {
+    children,
+    className = "",
+    glow = true,
+    onClick,
+    ...rest
+  } = props;
+
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
@@ -26,12 +27,13 @@ export const Card = ({
       whileHover={onClick ? "hover" : ""}
       whileTap={onClick ? "tap" : ""}
       onClick={onClick}
+      ref={ref}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        "--mouse-x": `${mouseCoords.x}px`,
-        "--mouse-y": `${mouseCoords.y}px`,
+        ["--mouse-x"]: `${mouseCoords.x}px`,
+        ["--mouse-y"]: `${mouseCoords.y}px`
       }}
       className={`
         relative backdrop-blur-xl bg-white/70 dark:bg-slate-900/70
@@ -41,7 +43,7 @@ export const Card = ({
         ${onClick ? "cursor-pointer" : ""}
         ${className}
       `}
-      {...props}
+      {...rest}
     >
       {/* Dynamic light refraction glow that follows mouse */}
       {glow && (
@@ -49,13 +51,15 @@ export const Card = ({
           className="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 rounded-2xl"
           style={{
             opacity: isHovered ? 1 : 0,
-            background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(124, 58, 237, 0.08), transparent 80%)`,
+            background: `radial-gradient(350px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(124, 58, 237, 0.08), transparent 80%)`
           }}
         />
       )}
       <div className="relative z-10 w-full h-full">{children}</div>
     </motion.div>
   );
-};
+}
 
+const Card = forwardRef(CardComponent);
 export default Card;
+export { Card };

@@ -28,21 +28,59 @@ const heatmapColors = [
 export const Dashboard = () => {
   const { userData } = useAuth();
   const [rank, setRank] = useState("Loading...");
+  
+  // Initialize with 168 empty cells (24 weeks * 7 days)
   const [heatmapCells, setHeatmapCells] = useState(
     Array.from({ length: 168 }, () => 0),
   );
 
+  // 1. Fetch REAL GitHub Contributions for Heatmap with Caching
   useEffect(() => {
     const fetchHeatmap = async () => {
       const username = userData?.githubUsername;
       if (!username) return;
+
+      const cacheKey = `heatmap_${username}`;
+      const cached = localStorage.getItem(cacheKey);
+      const now = Date.now();
+
+      let data = null;
+
       try {
         const res = await fetch(
           `https://github-contributions-api.jogruber.de/v4/${username}?y=last`,
         );
-        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(`API Error: ${res.status}`);
+        }
+
+        data = await res.json();
+        const cacheEntry = { data, timestamp: now };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
+      } catch (err) {
+        if (cached) {
+          const cacheEntry = JSON.parse(cached);
+          const cacheAge = now - cacheEntry.timestamp;
+          const fifteenMinutes = 15 * 60 * 1000;
+
+          if (cacheAge < fifteenMinutes || err.message.includes("API")) {
+            data = cacheEntry.data;
+            console.log("Using cached heatmap data");
+          }
+        }
+
+        if (!data) {
+          console.error("Heatmap fetch error (Falling back to empty grid):", err);
+          setHeatmapCells(Array.from({ length: 168 }, () => 0));
+          return;
+        }
+      }
+
+      if (data) {
         const contributions = data.contributions || [];
         const last168 = contributions.slice(-168);
+
         const cells = last168.map((day) => {
           const c = day.count;
           if (c === 0) return 0;
@@ -51,14 +89,20 @@ export const Dashboard = () => {
           if (c <= 9) return 3;
           return 4;
         });
-        setHeatmapCells(cells);
-      } catch (err) {
-        console.error("Heatmap fetch error:", err);
+
+        if (cells.length < 168) {
+          const padding = Array.from({ length: 168 - cells.length }, () => 0);
+          setHeatmapCells([...padding, ...cells]);
+        } else {
+          setHeatmapCells(cells);
+        }
       }
     };
+
     fetchHeatmap();
   }, [userData?.githubUsername]);
 
+  // 2. Fetch Dynamic Leaderboard Rank
   useEffect(() => {
     if (!userData || !userData.points) return;
     const fetchRank = async () => {
@@ -231,7 +275,7 @@ export const Dashboard = () => {
               <div
                 key={idx}
                 className={`w-3.5 h-3.5 rounded-sm border border-slate-200/5 dark:border-slate-800/5 hover:ring-2 hover:ring-violet-500/40 transition-all duration-150 ${heatmapColors[val]}`}
-                title={`Level: ${val}`}
+                title={`Activity Level: ${val}`}
               />
             ))}
           </div>

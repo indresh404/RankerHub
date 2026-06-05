@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/profile/:username",
+      "destination": "/api/profile-meta/:username"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }
