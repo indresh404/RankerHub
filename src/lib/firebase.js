@@ -103,16 +103,19 @@ export const signInWithGitHub = async (requestRepoScope = false) => {
     
     const credential = GithubAuthProvider.credentialFromResult(result);
     const accessToken = credential.accessToken;
-    
+
+    // SECURITY NOTE: Never include access tokens in userData or Firestore
+    // Tokens are sensitive credentials that should only exist in memory
+    // and only be used in secure, server-side operations
     const userData = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
-      githubAccessToken: accessToken,
       lastLogin: new Date().toISOString(),
+      // githubAccessToken NOT included - never store tokens in Firestore
     };
-    
+
     return { user, accessToken, userData, result }; 
   } catch (error) {
     console.error("GitHub sign-in error:", error);

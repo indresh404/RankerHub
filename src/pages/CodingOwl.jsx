@@ -8,7 +8,8 @@ import { useAuth } from "../context/AuthContext";
 export const CodingOwl = () => {
   const { userData } = useAuth();
   const userName = userData?.name || "Developer";
-  const userStreak = userData?.streak || 0;
+  const loginStreak = userData?.streak || 0;
+  const githubStreak = userData?.githubStreak || 0; // New GitHub Live Streak
   const [habits, setHabits] = useState(habitCards);
   const [timeLeft, setTimeLeft] = useState(1500); // 25:00 in seconds
   const [timerActive, setTimerActive] = useState(false);
@@ -75,7 +76,7 @@ export const CodingOwl = () => {
         
         {/* Mascot bubble */}
         <Card className="lg:col-span-2 p-8 flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-orange-500/10 via-slate-50/0 to-slate-50/0 dark:from-orange-500/5 dark:via-slate-900/0 dark:to-slate-900/0 border-orange-500/15">
-          {/* Mascot Mascot representation */}
+          {/* Mascot representation */}
           <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-orange-400 to-red-500 flex items-center justify-center text-4xl shadow-lg border border-orange-400/25 flex-shrink-0 animate-bounce">
             🦉
           </div>
@@ -86,13 +87,13 @@ export const CodingOwl = () => {
             </h3>
             
             <div className="bg-white/80 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/45 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-semibold italic relative">
-              "Whoo-whoo! You've logged code for {userStreak} consecutive days, {userName}. Oliver is proud! Maintain your streak today to earn a 1.5x points multiplier."
+              "Whoo-whoo! You've pushed code to GitHub for {githubStreak} consecutive days, {userName}. Oliver is proud! Maintain your live GitHub streak today to earn your +10 XP daily bonus."
             </div>
             
             <div className="flex justify-center sm:justify-start items-center gap-4 text-xs font-bold text-slate-400">
               <span>Mood: <span className="text-orange-500">Ecstatic! 🔥</span></span>
               <span>•</span>
-              <span>Next Check-in: 8 hours remaining</span>
+              <span>Platform Streak: {loginStreak} days</span>
             </div>
           </div>
         </Card>
@@ -264,4 +265,3 @@ export const CodingOwl = () => {
 };
 
 export default CodingOwl;
-

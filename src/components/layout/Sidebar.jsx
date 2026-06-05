@@ -18,6 +18,7 @@ import {
   UsersRound
 } from "lucide-react";
 import { Github } from "../ui/Icons";
+import ThemeToggle from "../ui/ThemeToggle";
 import { sidebarLinks } from "../../constants";
 import LogoutConfirmModal from "../ui/LogoutConfirmModal";
 import logo from "../../assets/logo.png";
@@ -145,8 +146,17 @@ export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
 
         </div>
 
-        {/* Sidebar Footer / Logout */}
-        <div className="p-3 border-t border-slate-800/50">
+        {/* Sidebar Footer / Theme & Logout */}
+        <div className="p-3 border-t border-slate-800/50 space-y-2">
+          <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between px-3"} py-2`}>
+            {!isCollapsed && (
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Theme
+              </span>
+            )}
+            <ThemeToggle className="w-9 h-9" />
+          </div>
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors duration-200 cursor-pointer group"

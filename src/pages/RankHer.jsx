@@ -7,7 +7,7 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 
 export const RankHer = () => {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
 
   // null  = subscription has not yet returned data (loading)
   // []    = subscription returned, zero qualifying users
@@ -71,7 +71,12 @@ export const RankHer = () => {
       <>
         {/* Spotlight cards: top 2 real women engineers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {womenUsers.slice(0, 2).map((u) => (
+          {womenUsers.slice(0, 2).map((u) => {
+            const isCurrentUser = user && u.uid === user.uid;
+            const displayName = isCurrentUser ? (userData?.name || u.name) : u.name;
+            const displayAvatar = isCurrentUser ? (userData?.avatar || user?.photoURL || u.avatar) : (u.avatar || u.photoURL);
+
+            return (
             <Card
               key={u.uid}
               className="p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 border-pink-500/15"
@@ -79,15 +84,15 @@ export const RankHer = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
 
               <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
-                {(u.avatar || u.photoURL) ? (
+                {displayAvatar ? (
                   <img
-                    src={u.avatar || u.photoURL}
-                    alt={u.name}
+                    src={displayAvatar}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-pink-500/10 flex items-center justify-center text-2xl font-black text-pink-500">
-                    {(u.name || "?")[0].toUpperCase()}
+                    {(displayName || "?")[0].toUpperCase()}
                   </div>
                 )}
                 <div className="absolute bottom-1 right-1 bg-pink-500 text-white p-1 rounded-lg">
@@ -101,7 +106,7 @@ export const RankHer = () => {
                     Rank #{u.rank}
                   </span>
                   <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-2 mb-0">
-                    {u.name}
+                    {displayName}
                   </h3>
                   <span className="text-xs font-bold text-slate-400">
                     {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
@@ -148,7 +153,8 @@ export const RankHer = () => {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {/* Empowerment banner */}
@@ -187,7 +193,12 @@ export const RankHer = () => {
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm mt-4">
-            {womenUsers.map((u) => (
+            {womenUsers.map((u) => {
+              const isCurrentUser = user && u.uid === user.uid;
+              const displayName = isCurrentUser ? (userData?.name || u.name) : u.name;
+              const displayAvatar = isCurrentUser ? (userData?.avatar || user?.photoURL || u.avatar) : (u.avatar || u.photoURL);
+
+              return (
               <div
                 key={u.uid}
                 className="py-4 flex items-center justify-between gap-4 hover:bg-pink-500/5 dark:hover:bg-pink-500/5 transition-colors rounded-xl px-2"
@@ -198,15 +209,15 @@ export const RankHer = () => {
                   </span>
 
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
-                    {(u.avatar || u.photoURL) ? (
+                    {displayAvatar ? (
                       <img
-                        src={u.avatar || u.photoURL}
-                        alt={u.name}
+                        src={displayAvatar}
+                        alt={displayName}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <span className="text-sm font-black text-pink-500">
-                        {(u.name || "?")[0].toUpperCase()}
+                        {(displayName || "?")[0].toUpperCase()}
                       </span>
                     )}
                   </div>
@@ -214,7 +225,7 @@ export const RankHer = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="font-extrabold text-slate-900 dark:text-white block leading-tight truncate">
-                        {u.name}
+                        {displayName}
                       </span>
                       <span className="text-[10px] text-pink-500/80 font-bold truncate hidden sm:inline">
                         {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
@@ -244,7 +255,8 @@ export const RankHer = () => {
                   </span>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </>

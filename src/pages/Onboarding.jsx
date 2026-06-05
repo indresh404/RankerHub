@@ -150,8 +150,8 @@ export const Onboarding = () => {
       setIsLoading(false);
       return;
     }
-    if (!selectedCollege || !collegesList.includes(selectedCollege)) {
-      setError("Please select a college from the searchable dropdown list.");
+    if (!selectedCollege || !collegesList.includes(selectedCollege) || collegeSearch !== selectedCollege) {
+      setError("Please select a valid college from the searchable dropdown list.");
       setIsLoading(false);
       return;
     }
@@ -242,9 +242,28 @@ export const Onboarding = () => {
       }
 
       // 3. Execute isolated Firestore transaction
+      // Note: The referral code uniqueness check above (lines 196-217) prevents most
+      // collisions, but in high-concurrency scenarios two users might pass the check
+      // simultaneously. This transaction-level defensive check catches late collisions
+      // and throws an error, prompting the user to retry with a newly generated code.
       await runTransaction(db, async (transaction) => {
         const myUserRef = doc(db, "users", activeUid);
         const myReferralRef = doc(db, "referrals", activeUid);
+
+        // Defensive check: re-verify the referral code is still unique right before
+        // writing. If another user wrote the same code between our earlier check and
+        // now, we'll detect it here and throw, causing the onboarding to fail so the
+        // user can retry with a new code.
+        const myExistingUserDoc = await transaction.get(myUserRef);
+        if (myExistingUserDoc.exists()) {
+          throw new Error("Your account has already been set up. Please log in.");
+        }
+
+        const existingCodeQuery = query(collection(db, "users"), where("referralCode", "==", newReferralCode));
+        const existingCodeSnap = await getDocs(existingCodeQuery);
+        if (!existingCodeSnap.empty) {
+          throw new Error("Referral code collision detected. Please try onboarding again.");
+        }
 
         // Determine starting points
         let initialReferralPoints = 0;
@@ -321,12 +340,17 @@ export const Onboarding = () => {
               totalEarned: currentTotalEarned + 100
             });
           } else {
-            // Safe fallback if index doc doesn't exist
-            transaction.set(referrerIndexRef, {
-              referralCode: referrerCodeClean,
-              usedBy: [activeUid],
-              totalEarned: 100
-            });
+            // Only create fallback if referrer user doc exists to prevent orphaned records
+            if (referrerDocSnap.exists()) {
+              transaction.set(referrerIndexRef, {
+                referralCode: referrerCodeClean,
+                usedBy: [activeUid],
+                totalEarned: 100
+              });
+            } else {
+              // Referrer user no longer exists, fail the transaction
+              throw new Error("Referrer user not found, unable to process referral");
+            }
           }
         }
 

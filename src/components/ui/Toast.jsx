@@ -9,11 +9,11 @@ export const Toast = ({ message, type = "success", onClose }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, x: "-50%" }}
-      animate={{ opacity: 1, y: 0, x: "-50%" }}
-      exit={{ opacity: 0, y: 20, x: "-50%" }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
       transition={{ type: "spring", stiffness: 350, damping: 25 }}
-      className={`fixed bottom-6 left-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold backdrop-blur-sm border transition-colors duration-300
+      className={`flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold backdrop-blur-sm border w-full
         ${type === "success"
           ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
           : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
@@ -22,7 +22,7 @@ export const Toast = ({ message, type = "success", onClose }) => {
       aria-live="polite"
     >
       <span>{type === "success" ? "✅" : "❌"}</span>
-      {message}
+      <span className="flex-1">{message}</span>
     </motion.div>
   );
 };

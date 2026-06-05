@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
+import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
 
 const AuthContext = createContext({});
 
@@ -29,13 +30,17 @@ const checkAndUpdateStreak = async (data, docRef) => {
     let newStreakPoints = data.points?.streakPoints || 0;
     
     if (lastLoginDate) {
-      const diffTime = Math.abs(now - lastLoginDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const lastLoginDateStr = lastLoginDate.toDateString();
+      const todayStr = now.toDateString();
+      const yesterdayStr = yesterday.toDateString();
+
+      if (lastLoginDateStr === yesterdayStr) {
         newStreak += 1;
         newStreakPoints += 10;
-      } else if (diffDays > 1) {
+      } else if (lastLoginDateStr !== todayStr) {
         newStreak = 1;
       }
     } else {
@@ -67,14 +72,21 @@ const checkAndUpdateStreak = async (data, docRef) => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(auth ? true : false);
   const [isOnboarding, setIsOnboarding] = useState(false);
-  // GitHub OAuth access token persisted in sessionStorage to survive page refreshes
-  const [ghAccessToken, setGhAccessToken] = useState(() => {
-    return sessionStorage.getItem("gh_access_token") || null;
-  });
+  // GitHub OAuth access token stored only in memory, not persisted to storage
+  // Firebase Auth handles session persistence securely via HTTP-only cookies
+  const [ghAccessToken, setGhAccessToken] = useState(null);
 
   useEffect(() => {
+    // If Firebase wasn't configured (app === null), `auth` will be null.
+    // Avoid calling `onAuthStateChanged` with a null auth instance which
+    // causes a runtime error in the browser bundle.
+    if (!auth) {
+      console.warn("Firebase auth is not initialized; auth listener skipped.");
+      return undefined;
+    }
+
     let unsubscribeSnapshot = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
@@ -85,27 +97,47 @@ export const AuthProvider = ({ children }) => {
 
       if (currentUser) {
         setUser(currentUser);
-        const token = sessionStorage.getItem(`gh_token_${currentUser.uid}`) || sessionStorage.getItem("gh_access_token");
-        if (token) {
-          setGhAccessToken(token);
-        }
-        
+        // Token is only available during the current session in memory
+        // It will be null on page refresh, requiring fresh authentication
+        // This is the secure default behavior
+
         const userDocRef = doc(db, "users", currentUser.uid);
         
+        // Try to load from cache first to reduce initial load time
+        const docPath = `users/${currentUser.uid}`;
+        const cachedData = userDataCache.get(docPath);
+        if (cachedData) {
+          setUserData(cachedData);
+          setIsOnboarding(cachedData.onboardingStatus === "incomplete");
+          setLoading(false);
+        }
+
+        // Subscribe to real-time updates with debouncing to reduce re-renders
         unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setUserData(data);
-            setIsOnboarding(data.onboardingStatus === "incomplete");
-            setLoading(false);
+
+            // Update cache immediately for fast subsequent reads
+            userDataCache.set(docPath, data);
+
+            // Debounce state updates to prevent excessive re-renders from rapid changes
+            listenerOptimizer.debounce(currentUser.uid, (userData) => {
+              setUserData(userData);
+              setIsOnboarding(userData.onboardingStatus === "incomplete");
+              setLoading(false);
+            }, data);
+
+            // Update streak asynchronously
             checkAndUpdateStreak(data, userDocRef);
           } else {
-            setUserData(null);
-            setIsOnboarding(true);
-            setLoading(false);
+            userDataCache.delete(docPath);
+            listenerOptimizer.debounce(currentUser.uid, () => {
+              setUserData(null);
+              setIsOnboarding(true);
+              setLoading(false);
+            }, null);
           }
         }, (error) => {
-          console.error("Real-time profile listener error:", error);
           setLoading(false);
         });
 
@@ -133,9 +165,9 @@ export const AuthProvider = ({ children }) => {
       const githubId = additionalInfo?.profile?.id || null;
       const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
-      // Save the token to sessionStorage and state to keep user authenticated across refreshes
-      sessionStorage.setItem("gh_access_token", accessToken);
-      sessionStorage.setItem(`gh_token_${authUser.uid}`, accessToken);
+      // Store token only in memory for current session
+      // Firebase Auth handles persistent session via secure HTTP-only cookies
+      // Token is not persisted to localStorage or sessionStorage to prevent XSS theft
       setGhAccessToken(accessToken);
 
       const userDocRef = doc(db, "users", authUser.uid);
@@ -154,6 +186,7 @@ export const AuthProvider = ({ children }) => {
           city: "",
           streak: 0,
           longestStreak: 0,
+          githubStreak: 0,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
@@ -183,10 +216,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setLoading(true);
     try {
-      if (user) {
-        sessionStorage.removeItem(`gh_token_${user.uid}`);
-      }
-      sessionStorage.removeItem("gh_access_token");
+      // No need to remove from storage since token is only in memory
+      // Firebase Auth session will be cleared by signOutUser()
       await signOutUser();
       setUser(null);
       setUserData(null);
@@ -200,18 +231,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchGitHubStats = async (uid, username) => {
+    // Validate GitHub username per GitHub's rules: 1-39 characters,
+    // alphanumeric + hyphens only, no leading/trailing hyphens.
+    if (!username || typeof username !== "string") {
+      throw new Error("GitHub username is required and must be a string.");
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length === 0 || trimmedUsername.length > 39) {
+      throw new Error("GitHub username must be between 1 and 39 characters.");
+    }
+
+    if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(trimmedUsername)) {
+      throw new Error("GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.");
+    }
+
+    // URL-encode the username to prevent injection attacks, though axios should
+    // handle this automatically.
+    const encodedUsername = encodeURIComponent(trimmedUsername);
+
     const token = ghAccessToken;
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {
-      const profileRes = await axios.get(`https://api.github.com/users/${username}`, { headers });
+      const profileRes = await axios.get(`https://api.github.com/users/${encodedUsername}`, { headers });
       const publicRepos = profileRes.data.public_repos || 0;
       const followers = profileRes.data.followers || 0;
       
       let stars = 0;
       let primaryLanguage = "JavaScript";
       try {
-        const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&type=owner`, { headers });
+        const reposRes = await axios.get(`https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`, { headers });
         stars = reposRes.data.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
         
         const langCounts = {};
@@ -230,7 +280,7 @@ export const AuthProvider = ({ children }) => {
 
       let commits = 0;
       try {
-        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${username}`, { headers });
+        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers });
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
         console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
@@ -239,7 +289,7 @@ export const AuthProvider = ({ children }) => {
 
       let prs = 0;
       try {
-        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${username}+type:pr`, { headers });
+        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers });
         prs = prsRes.data.total_count || 0;
       } catch (err) {
         console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
@@ -248,14 +298,62 @@ export const AuthProvider = ({ children }) => {
 
       let reviews = 0;
       try {
-        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${username}`, { headers });
+        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers });
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
         console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
         reviews = 0;
       }
 
-      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10);
+      // --- NEW GITHUB LIVE STREAK CALCULATION LOGIC ---
+      let githubStreak = 0;
+      try {
+        const eventsRes = await axios.get(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
+        const events = eventsRes.data;
+        
+        // Extract unique dates of events (YYYY-MM-DD format)
+        const eventDates = new Set(
+          events
+            .filter(e => e.created_at)
+            .map(e => e.created_at.split('T')[0])
+        );
+        
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        let dateToCheck = new Date(today);
+        
+        if (eventDates.has(todayStr)) {
+          // Streak is active today
+        } else if (eventDates.has(yesterdayStr)) {
+          // Streak was active yesterday, count from yesterday
+          dateToCheck = yesterday;
+        } else {
+          // No active streak
+          dateToCheck = null;
+        }
+
+        if (dateToCheck) {
+          while (true) {
+            const checkStr = dateToCheck.toISOString().split('T')[0];
+            if (eventDates.has(checkStr)) {
+              githubStreak++;
+              dateToCheck.setDate(dateToCheck.getDate() - 1);
+            } else {
+              break; // Streak broken
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("GitHub events retrieval failed for streak:", err);
+      }
+
+      // Add points for each day of the active GitHub streak (+10 XP per day)
+      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10) + (githubStreak * 10);
 
       return {
         commits,
@@ -265,6 +363,7 @@ export const AuthProvider = ({ children }) => {
         stars,
         followers,
         primaryLanguage,
+        githubStreak,
         gitRankPoints
       };
     } catch (error) {
@@ -277,6 +376,7 @@ export const AuthProvider = ({ children }) => {
         stars: 0,
         followers: 0,
         primaryLanguage: "JavaScript",
+        githubStreak: 0,
         gitRankPoints: 0
       };
     }
@@ -323,6 +423,7 @@ export const AuthProvider = ({ children }) => {
         "githubStats.stars": ghStats.stars,
         "githubStats.followers": ghStats.followers,
         "githubStats.primaryLanguage": ghStats.primaryLanguage,
+        "githubStreak": ghStats.githubStreak, // Syncs live streak to Firestore
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
         "lastSync": new Date().toISOString()
@@ -338,7 +439,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
+<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
       {children}
     </AuthContext.Provider>
   );

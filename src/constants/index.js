@@ -45,5 +45,6 @@ export const systemBadges = [
   { id: "b1", name: "Pioneer", description: "First 100 users", color: "from-amber-500 to-orange-500" },
   { id: "b2", name: "Code Warrior", description: "100+ contributions", color: "from-blue-500 to-indigo-500" },
   { id: "b3", name: "Streak Master", description: "10+ day streak", color: "from-red-500 to-pink-500" },
-  { id: "b4", name: "CSS Sorceress", description: "UI layout designer", color: "from-purple-500 to-violet-500" }
+  { id: "b4", name: "CSS Sorceress", description: "UI layout designer", color: "from-purple-500 to-violet-500" },
+  { id: "b5", name: "Ranker Ambassador", description: "10+ successful referrals", color: "from-emerald-500 to-teal-500" }
 ];
