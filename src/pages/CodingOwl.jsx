@@ -11,15 +11,24 @@ export const CodingOwl = () => {
   const userName = userData?.name || "Developer";
   const loginStreak = userData?.streak || 0;
   const githubStreak = userData?.githubStreak || 0;
-  const hubCoins = userData?.hubCoins ?? 500;
-  const inventory = userData?.inventory || ["oliver"];
-  const activeMascotId = userData?.activeMascot || "oliver";
-  const activeMascotInfo = mascotsData.find(m => m.id === activeMascotId) || mascotsData[0];
+  
+  // 1. OPTIMISTIC STATES for Shop & Rewards
+  const [optimisticCoins, setOptimisticCoins] = useState(userData?.hubCoins ?? 500);
+  const [optimisticInventory, setOptimisticInventory] = useState(userData?.inventory || ["oliver"]);
+  const [optimisticEquipped, setOptimisticEquipped] = useState(userData?.activeMascot || "oliver");
 
-  const [activeTab, setActiveTab] = useState("arena"); // "arena" | "shop"
-  const [isProcessing, setIsProcessing] = useState(false);
+  // Sync local optimistic state whenever backend data actually updates
+  useEffect(() => {
+    setOptimisticCoins(userData?.hubCoins ?? 500);
+    setOptimisticInventory(userData?.inventory || ["oliver"]);
+    setOptimisticEquipped(userData?.activeMascot || "oliver");
+  }, [userData?.hubCoins, userData?.inventory, userData?.activeMascot]);
 
-  // --- Habit Checklist Persistence ---
+  const activeMascotInfo = mascotsData.find(m => m.id === optimisticEquipped) || mascotsData[0];
+
+  const [activeTab, setActiveTab] = useState("arena"); 
+
+  // --- Habit Checklist Persistence & Optimistic Update ---
   const [habits, setHabits] = useState(() => {
     if (typeof window !== "undefined") {
       const savedHabits = localStorage.getItem("codingOwlHabits");
@@ -32,7 +41,7 @@ export const CodingOwl = () => {
     localStorage.setItem("codingOwlHabits", JSON.stringify(habits));
   }, [habits]);
 
-  // --- Pomodoro Persistence Logic (Strict React Purity Fix) ---
+  // --- Pomodoro Persistence & Optimistic Completion ---
   const [timeLeft, setTimeLeft] = useState(() => {
     if (typeof window !== "undefined") {
       const savedEndTime = localStorage.getItem("pomodoroEndTime");
@@ -46,7 +55,7 @@ export const CodingOwl = () => {
         if (parsed > 0) return parsed;
       }
     }
-    return 1500; // Default 25 mins
+    return 1500; 
   });
 
   const [timerActive, setTimerActive] = useState(() => {
@@ -62,6 +71,22 @@ export const CodingOwl = () => {
   });
   const timerRef = useRef(null);
 
+  // 2. Optimistic Pomodoro Reward Logic
+  const handlePomodoroComplete = async () => {
+    const prevCoins = optimisticCoins;
+    // Optimistically reward 50 HubCoins
+    setOptimisticCoins((prev) => prev + 50);
+    
+    try {
+      // Simulate backend Firestore update for Pomodoro session
+      await new Promise(resolve => setTimeout(resolve, 800));
+    } catch (error) {
+      // Rollback on failure
+      setOptimisticCoins(prevCoins);
+      alert("Failed to sync Pomodoro session to server.");
+    }
+  };
+
   useEffect(() => {
     if (timerActive) {
       timerRef.current = setInterval(() => {
@@ -71,6 +96,9 @@ export const CodingOwl = () => {
             setTimerActive(false);
             localStorage.removeItem("pomodoroEndTime");
             localStorage.removeItem("pomodoroTimeLeft");
+            
+            // Trigger optimistic completion
+            handlePomodoroComplete();
             return 0;
           }
           return prev - 1;
@@ -86,12 +114,10 @@ export const CodingOwl = () => {
 
   const toggleTimer = () => {
     if (timerActive) {
-      // Pausing the timer
       setTimerActive(false);
       localStorage.removeItem("pomodoroEndTime");
       localStorage.setItem("pomodoroTimeLeft", timeLeft.toString());
     } else {
-      // Starting/Resuming the timer
       setTimerActive(true);
       const endTime = Date.now() + timeLeft * 1000;
       localStorage.setItem("pomodoroEndTime", endTime.toString());
@@ -112,7 +138,12 @@ export const CodingOwl = () => {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  const toggleHabitComplete = (id) => {
+  // 3. Optimistic Habit (Streak) Check-in
+  const toggleHabitComplete = async (id) => {
+    // Snapshot previous state for rollback
+    const previousHabits = [...habits];
+
+    // Apply Optimistic Update Immediately
     setHabits((prev) =>
       prev.map((habit) => {
         if (habit.id === id) {
@@ -123,30 +154,55 @@ export const CodingOwl = () => {
         return habit;
       })
     );
-  };
 
-  const handlePurchase = async (mascotId, price) => {
-    setIsProcessing(true);
     try {
-      await purchaseMascot(mascotId, price);
-      // Let AuthContext handle the state update via firestore snapshot
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Failed to purchase.");
-    } finally {
-      setIsProcessing(false);
+      // Simulate backend streak sync API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      // Rollback UI if backend fails
+      setHabits(previousHabits);
+      alert("Action failed — please try again");
     }
   };
 
+  // 4. Optimistic Mascot Purchase
+  const handlePurchase = async (mascotId, price) => {
+    if (optimisticCoins < price) return;
+
+    // Snapshot
+    const prevCoins = optimisticCoins;
+    const prevInventory = [...optimisticInventory];
+
+    // Optimistic Apply
+    setOptimisticCoins((prev) => prev - price);
+    setOptimisticInventory((prev) => [...prev, mascotId]);
+
+    try {
+      await purchaseMascot(mascotId, price);
+    } catch (err) {
+      // Rollback
+      setOptimisticCoins(prevCoins);
+      setOptimisticInventory(prevInventory);
+      console.error(err);
+      alert(err.message || "Action failed — please try again");
+    }
+  };
+
+  // 5. Optimistic Mascot Equip
   const handleEquip = async (mascotId) => {
-    setIsProcessing(true);
+    // Snapshot
+    const prevEquipped = optimisticEquipped;
+    
+    // Optimistic Apply
+    setOptimisticEquipped(mascotId);
+
     try {
       await equipMascot(mascotId);
     } catch (err) {
+      // Rollback
+      setOptimisticEquipped(prevEquipped);
       console.error(err);
-      alert(err.message || "Failed to equip.");
-    } finally {
-      setIsProcessing(false);
+      alert(err.message || "Action failed — please try again");
     }
   };
 
@@ -164,7 +220,7 @@ export const CodingOwl = () => {
           <CircleDollarSign className="w-5 h-5 text-amber-500" />
           <div>
             <span className="block text-[10px] uppercase font-bold text-slate-500">HubCoins</span>
-            <span className="block text-sm font-black text-slate-900 dark:text-white leading-none">{hubCoins.toLocaleString()}</span>
+            <span className="block text-sm font-black text-slate-900 dark:text-white leading-none">{optimisticCoins.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -200,7 +256,6 @@ export const CodingOwl = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Mascot bubble */}
         <Card className={`lg:col-span-2 p-8 flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-${activeMascotInfo.color}-500/10 via-slate-50/0 to-slate-50/0 dark:from-${activeMascotInfo.color}-500/5 dark:via-slate-900/0 dark:to-slate-900/0 border-${activeMascotInfo.color}-500/15`}>
-          {/* Mascot representation */}
           <div className={`w-28 h-28 rounded-full bg-gradient-to-tr from-${activeMascotInfo.color}-400 to-${activeMascotInfo.color === 'orange' ? 'red' : activeMascotInfo.color}-500 flex items-center justify-center text-4xl shadow-lg border border-${activeMascotInfo.color}-400/25 flex-shrink-0 animate-bounce`}>
             {activeMascotInfo.icon}
           </div>
@@ -236,7 +291,13 @@ export const CodingOwl = () => {
 
           {/* Timer visualization */}
           <div className="my-6 text-center flex flex-col items-center justify-center">
-            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-widest block font-mono">
+            <span 
+              role="timer"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`Pomodoro timer: ${Math.floor(timeLeft / 60)} minutes and ${timeLeft % 60} seconds remaining`}
+              className="text-4xl font-black text-slate-900 dark:text-white tracking-widest block font-mono"
+            >
               {formatTime(timeLeft)}
             </span>
             <span className="text-[10px] text-slate-400 uppercase font-bold mt-1.5 block">
@@ -391,9 +452,9 @@ export const CodingOwl = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mascotsData.map((mascot) => {
-              const isOwned = inventory.includes(mascot.id);
-              const isEquipped = activeMascotId === mascot.id;
-              const canAfford = hubCoins >= mascot.price;
+              const isOwned = optimisticInventory.includes(mascot.id);
+              const isEquipped = optimisticEquipped === mascot.id;
+              const canAfford = optimisticCoins >= mascot.price;
 
               return (
                 <Card key={mascot.id} className={`p-6 flex flex-col justify-between border-2 transition-all ${isEquipped ? 'border-amber-500' : 'border-slate-200/50 dark:border-slate-800/50 hover:border-amber-500/30'}`}>
@@ -423,7 +484,6 @@ export const CodingOwl = () => {
                     ) : isOwned ? (
                       <button 
                         onClick={() => handleEquip(mascot.id)}
-                        disabled={isProcessing}
                         className="w-full py-2.5 rounded-xl font-bold bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-500 border border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20 cursor-pointer flex items-center justify-center gap-2 transition-all"
                       >
                         Equip Mascot
@@ -431,7 +491,7 @@ export const CodingOwl = () => {
                     ) : (
                       <button 
                         onClick={() => handlePurchase(mascot.id, mascot.price)}
-                        disabled={!canAfford || isProcessing}
+                        disabled={!canAfford}
                         className={`w-full py-2.5 rounded-xl font-bold border flex items-center justify-center gap-2 transition-all ${
                           canAfford 
                             ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent hover:scale-[1.02] cursor-pointer" 

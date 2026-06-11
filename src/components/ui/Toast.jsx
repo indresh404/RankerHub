@@ -20,6 +20,7 @@ export const Toast = ({ message, type = "success", onClose }) => {
         }`}
       role="status"
       aria-live="polite"
+      aria-atomic="true" /* Ensures entire toast is read by screen reader */
     >
       <span>{type === "success" ? "✅" : "❌"}</span>
       <span className="flex-1">{message}</span>
