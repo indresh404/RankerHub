@@ -28,7 +28,9 @@ Install the required dependencies:
 
 Bash
 npm install
+
 🔥 Step 2: Firebase Project Provisioning
+
 To prevent testing against the production database, create your own Firebase project for local development.
 
 Create a Firebase Project
@@ -66,9 +68,15 @@ Click Add App → Web App.
 Copy the Firebase configuration values.
 
 🔑 Step 3: Environment Variables
-Create a .env file in the project root and add your Firebase configuration:
 
-Code snippet
+The project contains a `.env.example` file which outlines all the required keys. 
+
+1. Copy the example file to create your own local environment file:
+   ```bash
+   cp .env.example .env
+
+2. Open your new .env file and replace the placeholder values with the configuration from your newly created Firebase project:
+
 VITE_FIREBASE_API_KEY=your_api_key_here
 VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
@@ -76,7 +84,8 @@ VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
-⚠️ Important: Never commit your .env file. It is already included in .gitignore.
+
+⚠️ Important: Never commit your .env file. It is already included in our .gitignore to prevent sensitive key leaks.
 
 📦 Step 4: Firebase CLI and Database Setup
 Deploy the required Firestore Security Rules and Indexes so leaderboard queries function correctly.
@@ -125,12 +134,12 @@ You can now log in using GitHub authentication. Your first developer profile wil
 Create a Feature Branch
 Bash
 git checkout -b feature/your-feature-name
+
 Develop and Test
-Make your changes.
-
-Test everything locally.
-
-Verify functionality using the Firestore emulator.
+- Make your changes.
+- Test everything locally.
+- Verify functionality using the Firestore emulator.
+- Run `node fix_lint.mjs` to ensure your code meets the project's formatting standards.
 
 Commit Changes
 Use the project's commit conventions:

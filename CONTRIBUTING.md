@@ -47,6 +47,15 @@ npm run dev
 ```
 The application will be running locally at `http://localhost:5173`.
 
+### 6. Code Quality & Linting
+RankerHub maintains strict code quality and formatting rules. Before you commit any changes or submit a Pull Request, you **must** run the custom linting script. 
+
+This script will automatically scan your files, fix formatting issues, and ensure Tailwind classes are properly ordered:
+```bash
+node fix_lint.mjs
+```
+Note: If the script detects errors it cannot auto-fix, please resolve them manually before pushing.
+
 ---
 
 ## Firebase Setup
