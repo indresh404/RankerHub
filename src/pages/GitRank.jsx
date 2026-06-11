@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal } from "lucide-react";
-import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
+import { collection, query, doc, where, orderBy, limit, startAfter, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { TableVirtuoso } from "react-virtuoso"; 
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
+import { useFirestoreCache } from "../context/FirestoreCacheContext"; 
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import GradientButton from "../components/ui/GradientButton";
@@ -13,16 +14,10 @@ import axios from "axios";
 export const GitRank = () => {
   const { user, userData, fetchGitHubStats, login } = useAuth();
 
-  // ============================================================
-  // ISSUE #194: URL Parameter Sync for State Persistence
-  // ISSUE #362: Server-Side College Filter Integration
-  // ============================================================
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get("search") || "";
   const selectedLanguage = searchParams.get("lang") || "All";
-  const selectedCollege = searchParams.get("college") || "All"; // NEW: Server-Side College State
-
-  // Active Tab for Referral Leaderboard (Issue #310) - Now synced with URL
+  const selectedCollege = searchParams.get("college") || "All"; 
   const activeTab = searchParams.get("tab") || "gitrank";
 
   const handleSearchChange = (e) => {
@@ -59,9 +54,8 @@ export const GitRank = () => {
   const [hasMore, setHasMore] = useState(true); 
   const [loadingMore, setLoadingMore] = useState(false); 
 
-  // Real-time leaderboard state
+  // Local Leaderboard state
   const [usersList, setUsersList] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
 
   // Syncing state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -77,12 +71,10 @@ export const GitRank = () => {
 
   const languages = ["All", "TypeScript", "Rust", "Go", "Python", "Kotlin", "Ruby", "JavaScript"];
 
-  // 1. Real-time Leaderboard Listener (Server-Side Filtered)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoadingUsers(true);
+  // In-Memory Navigation Cache Hook Integration
+  const cacheKey = `gitrank_${activeTab}_${selectedLanguage}_${selectedCollege}`;
 
-    // Build the query dynamically based on Active Tab and Tie-Breakers
+  const fetchLeaderboard = async () => {
     const constraints = [
       where("onboardingStatus", "==", "complete"),
     ];
@@ -96,12 +88,10 @@ export const GitRank = () => {
     
     constraints.push(orderBy("githubUsername", "asc"));
 
-    // DB level language filter
     if (selectedLanguage !== "All") {
       constraints.push(where("githubStats.primaryLanguage", "==", selectedLanguage));
     }
 
-    // DB level college filter (Resolves Issue #362)
     if (selectedCollege !== "All" && selectedCollege.trim() !== "") {
       constraints.push(where("college", "==", selectedCollege));
     }
@@ -109,33 +99,37 @@ export const GitRank = () => {
     constraints.push(limit(50));
 
     const q = query(collection(db, "users"), ...constraints);
+    const snapshot = await getDocs(q); // Switched from onSnapshot to getDocs to save reads
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const users = [];
-        snapshot.forEach((doc) => {
-          users.push(doc.data());
-        });
+    const users = [];
+    snapshot.forEach((doc) => {
+      users.push(doc.data());
+    });
 
-        const ranked = users.map((u, i) => ({
-          ...u,
-          rank: i + 1
-        }));
+    const ranked = users.map((u, i) => ({
+      ...u,
+      rank: i + 1
+    }));
 
-        setUsersList(ranked);
-        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === 50); 
-        setLoadingUsers(false);
-      },
-      (error) => {
-        console.error("Leaderboard subscription error:", error);
-        setLoadingUsers(false);
-      }
-    );
+    // Return the bundle so cache hook holds both data and pagination cursors
+    return {
+      users: ranked,
+      lastVisible: snapshot.docs[snapshot.docs.length - 1] || null,
+      hasMore: snapshot.docs.length === 50
+    };
+  };
 
-    return () => unsubscribe();
-  }, [selectedLanguage, activeTab, selectedCollege]); 
+  // TTL set to 60000ms (1 minute). Modifying filters changes the key instantly.
+  const { data: cachedData, loading: loadingUsers, invalidateCache } = useFirestoreCache(cacheKey, fetchLeaderboard, 60000);
+
+  // Sync the cached data payload into local component state
+  useEffect(() => {
+    if (cachedData) {
+      setUsersList(cachedData.users);
+      setLastVisible(cachedData.lastVisible);
+      setHasMore(cachedData.hasMore);
+    }
+  }, [cachedData]);
 
   // Pagination Function (Fetch next 50)
   const loadMoreUsers = async () => {
@@ -200,7 +194,6 @@ export const GitRank = () => {
   // 2. Fetch GitHub Events/Repos for Charts (Authenticated Only)
   useEffect(() => {
     if (!userData?.githubUsername) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingCharts(false);
       return;
     }
@@ -343,6 +336,9 @@ export const GitRank = () => {
         });
       });
 
+      // Clear the cache manually because our own points just updated!
+      invalidateCache();
+      
       setSyncSuccess("GitHub statistics updated in real time!");
       setTimeout(() => setSyncSuccess(""), 4000);
     } catch (err) {
@@ -390,7 +386,6 @@ export const GitRank = () => {
     return `${mins}m ${secs}s`;
   };
 
-// Filter leaderboard lists (Only Search is client side now)
   const filteredData = useMemo(() => {
     return usersList.filter((u) => {
       const name = u.name || "";
@@ -433,7 +428,7 @@ export const GitRank = () => {
     return weeks;
   }, [events]);
 
-// Chart Parsing 2: Languages Frequency
+  // Chart Parsing 2: Languages Frequency
   const languageChartData = useMemo(() => {
     if (!repos.length) return [];
     
