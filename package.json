@@ -30,7 +30,7 @@
     "@emnapi/core": "^1.11.0",
     "@emnapi/runtime": "^1.11.0",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.9.2",
+    "@types/node": "^25.9.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
