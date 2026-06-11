@@ -1,10 +1,41 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Check, UserPlus, UsersRound, Trophy } from "lucide-react";
 import Card from "../ui/Card";
 import GradientButton from "../ui/GradientButton";
 
 export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact = false, showPoints = false }) => {
+  // 1. Optimistic Local State
+  const [optimisticFollow, setOptimisticFollow] = useState(isFollowing);
+  const [isPending, setIsPending] = useState(false);
+
+  // Sync local state if parent prop changes externally
+  useEffect(() => {
+    setOptimisticFollow(isFollowing);
+  }, [isFollowing]);
+
+  const handleFollowClick = async () => {
+    if (isPending) return;
+    
+    // 2. Snapshot current state & apply optimistic update instantly
+    const previousState = optimisticFollow;
+    setOptimisticFollow(!previousState);
+    setIsPending(true);
+
+    try {
+      // 3. Fire the actual backend transaction
+      await onToggleFollow(developer.id);
+    } catch (error) {
+      // 4. Automatic Rollback on failure
+      setOptimisticFollow(previousState);
+      // Here you can integrate your Toast component: showToast("Action failed — please try again")
+      console.error("Optimistic update failed, rolling back.");
+      alert("Action failed — please try again"); 
+    } finally {
+      setIsPending(false);
+    }
+  };
+
   return (
     <Card className={`${compact ? "p-4" : "p-5"} h-full flex flex-col gap-4`}>
       <div className="flex items-start gap-4">
@@ -84,13 +115,14 @@ export const DeveloperCard = ({ developer, isFollowing, onToggleFollow, compact 
           {!compact && <span className="block truncate max-w-[220px]">{developer.activity}</span>}
         </div>
 
+        {/* Updated Button to use optimisticFollow */}
         <GradientButton
-          onClick={() => onToggleFollow(developer.id)}
-          variant={isFollowing ? "secondary" : "primary"}
-          glow={!isFollowing}
+          onClick={handleFollowClick}
+          variant={optimisticFollow ? "secondary" : "primary"}
+          glow={!optimisticFollow}
           className={`${compact ? "sm:w-auto" : ""} px-4 py-2 text-xs min-h-10 w-full`}
         >
-          {isFollowing ? (
+          {optimisticFollow ? (
             <>
               <Check className="w-4 h-4" />
               Following

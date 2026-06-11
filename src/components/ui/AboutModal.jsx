@@ -2,8 +2,11 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Shield, Users, Trophy, Code2, Award, Cpu, X } from "lucide-react";
 import Card from "./Card";
+import { useFocusTrap } from "../../hooks/useFocusTrap"; 
 
 export const AboutModal = ({ onClose }) => {
+  const modalRef = useFocusTrap(true); 
+  
   const stats = [
     { label: "Community Members", value: "250K+", icon: Users, color: "text-violet-500 bg-violet-500/10 border-violet-500/20" },
     { label: "XP Points Issued", value: "85M+", icon: Trophy, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
@@ -27,19 +30,24 @@ export const AboutModal = ({ onClose }) => {
         className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
       />
 
-      {/* Modal Box */}
+      {/* Modal Box - ADDED ARIA */}
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="about-title"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="relative w-full max-w-4xl max-h-[85vh] bg-slate-900/90 dark:bg-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800 p-6 md:p-8 text-slate-100 flex flex-col gap-6"
       >
-        {/* Close Button */}
+        {/* Close Button - ADDED aria-label */}
         <button
           onClick={onClose}
+          aria-label="Close About Modal"
           className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
 
         {/* Header */}
@@ -47,7 +55,7 @@ export const AboutModal = ({ onClose }) => {
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-violet-500/10 text-violet-400 border border-violet-500/20">
             Platform Mission
           </span>
-          <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-indigo-400 to-blue-400 my-0">
+          <h2 id="about-title" className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-indigo-400 to-blue-400 my-0">
             About RankerHub
           </h2>
           <p className="text-sm text-slate-400 font-medium my-0">
@@ -69,7 +77,7 @@ export const AboutModal = ({ onClose }) => {
               </p>
             </div>
             <div className="pt-6 border-t border-slate-800 flex items-center gap-3 text-xs font-semibold text-slate-500">
-              <Shield className="w-4 h-4 text-violet-500" />
+              <Shield className="w-4 h-4 text-violet-500" aria-hidden="true" />
               <span>Secure analytics, zero tracking data leakage, public verify systems.</span>
             </div>
           </Card>
@@ -77,7 +85,7 @@ export const AboutModal = ({ onClose }) => {
           <Card className="p-6 bg-gradient-to-br from-violet-600 to-indigo-700 text-white border-none shadow-[0_10px_30px_rgba(124,58,237,0.25)] flex flex-col justify-between">
             <div className="space-y-4">
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                <Award className="w-5 h-5 text-white" />
+                <Award className="w-5 h-5 text-white" aria-hidden="true" />
               </div>
               <h3 className="text-lg font-extrabold leading-tight my-0">Driven by Performance</h3>
               <p className="text-xs text-violet-100 leading-relaxed font-medium">
@@ -97,7 +105,7 @@ export const AboutModal = ({ onClose }) => {
             return (
               <Card key={idx} className="p-4 flex items-center gap-4 bg-slate-950/40 border-slate-800/50">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${stat.color} flex-shrink-0`}>
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
                   <span className="block text-lg font-black text-white leading-none">
@@ -118,7 +126,7 @@ export const AboutModal = ({ onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div className="space-y-2">
               <h4 className="font-extrabold text-white flex items-center gap-2 my-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-500" aria-hidden="true" />
                 Gamification & Fun
               </h4>
               <p className="text-xs text-slate-450 leading-relaxed font-medium">
@@ -127,7 +135,7 @@ export const AboutModal = ({ onClose }) => {
             </div>
             <div className="space-y-2">
               <h4 className="font-extrabold text-white flex items-center gap-2 my-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-pink-500" aria-hidden="true" />
                 Diversity & Representation
               </h4>
               <p className="text-xs text-slate-455 leading-relaxed font-medium">
@@ -136,7 +144,7 @@ export const AboutModal = ({ onClose }) => {
             </div>
             <div className="space-y-2">
               <h4 className="font-extrabold text-white flex items-center gap-2 my-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" aria-hidden="true" />
                 Data-Driven Growth
               </h4>
               <p className="text-xs text-slate-455 leading-relaxed font-medium">

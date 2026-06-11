@@ -108,6 +108,8 @@ service cloud.firestore {
       // Locks referralPoints to the actual totalEarned value in the referrals index.
       allow update: if isAuthenticated()
         && request.auth.uid != uid
+        // 🛡️ NEW GUARD (Issue #432): Only users actively onboarding can trigger a referral point grant
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.onboardingStatus == "incomplete"
         // Prevent modifying any root-level fields other than points
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points'])
         // FIX: Sync referralPoints directly with the referrals index document's totalEarned counter
@@ -120,7 +122,6 @@ service cloud.firestore {
         && request.resource.data.points.auditorPoints == resource.data.points.auditorPoints
         && exists(/databases/$(database)/documents/referrals/$(uid))
         && request.auth.uid in get(/databases/$(database)/documents/referrals/$(uid)).data.usedBy;
-    }
 
     match /referrals/{uid} {
       allow read: if isAuthenticated();
@@ -131,6 +132,8 @@ service cloud.firestore {
       // Allow either the owner to write, OR a referred user to atomically append their UID
       allow update: if isOwner(uid) || (
         isAuthenticated()
+        // 🛡️ NEW GUARD (Issue #432): Prevent existing users from arbitrarily claiming codes
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.onboardingStatus == "incomplete"
         && !(request.auth.uid in resource.data.usedBy)
         && request.resource.data.usedBy.size() == resource.data.usedBy.size() + 1
         && request.resource.data.usedBy[resource.data.usedBy.size()] == request.auth.uid
