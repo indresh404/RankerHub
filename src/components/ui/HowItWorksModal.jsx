@@ -2,8 +2,11 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Link2, GitPullRequest, Terminal, Flame, Trophy, X, CheckCircle2 } from "lucide-react";
 import Card from "./Card";
+import { useFocusTrap } from "../../hooks/useFocusTrap"; 
 
 export const HowItWorksModal = ({ onClose }) => {
+  const modalRef = useFocusTrap(true); 
+
   const steps = [
     {
       num: "01",
@@ -84,19 +87,24 @@ export const HowItWorksModal = ({ onClose }) => {
         className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-md"
       />
 
-      {/* Modal Box */}
+      {/* Modal Box - ADDED ARIA */}
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hiw-title"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="relative w-full max-w-3xl max-h-[85vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-800 p-6 md:p-8 text-slate-800 dark:text-slate-100 flex flex-col gap-6"
       >
-        {/* Close Button */}
+        {/* Close Button - ADDED aria-label */}
         <button
           onClick={onClose}
+          aria-label="Close How It Works Modal"
           className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5" aria-hidden="true" />
         </button>
 
         {/* Header */}
@@ -104,7 +112,7 @@ export const HowItWorksModal = ({ onClose }) => {
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
             Platform Lifecycle
           </span>
-          <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 dark:from-violet-400 dark:via-indigo-400 dark:to-blue-400 my-0">
+          <h2 id="hiw-title" className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 dark:from-violet-400 dark:via-indigo-400 dark:to-blue-400 my-0">
             How RankerHub Works
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 font-medium my-0">
@@ -118,9 +126,8 @@ export const HowItWorksModal = ({ onClose }) => {
             const Icon = step.icon;
             return (
               <div key={idx} className="relative group">
-                {/* Timeline Node (Icon Wrapper) */}
                 <div className={`absolute -left-[45px] md:-left-[53px] top-0 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg shadow-indigo-500/5 group-hover:scale-105 transition-transform duration-300`}>
-                  <Icon className="w-5 h-5 text-white" />
+                  <Icon className="w-5 h-5 text-white" aria-hidden="true" />
                 </div>
 
                 <div className="space-y-2">
@@ -133,12 +140,10 @@ export const HowItWorksModal = ({ onClose }) => {
                     </h3>
                   </div>
                   
-                  {/* Detailed Description */}
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold max-w-2xl my-0">
                     {step.desc}
                   </p>
 
-                  {/* Point mapping details */}
                   {step.details && (
                     <ul className="mt-2 space-y-1 list-none p-0 m-0">
                       {step.details.map((detail, dIdx) => (
@@ -158,7 +163,7 @@ export const HowItWorksModal = ({ onClose }) => {
         {/* Footer info banner */}
         <Card className="p-4 bg-gradient-to-r from-violet-100 to-indigo-100 dark:from-violet-900/20 dark:to-indigo-900/20 border-violet-200 dark:border-violet-800/40 text-center">
           <p className="text-xs text-indigo-700 dark:text-indigo-300 font-bold my-0 flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
             Ready to climb? Link your profile, start coding, and watch your developer standings rise!
           </p>
         </Card>

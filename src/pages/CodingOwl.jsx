@@ -236,7 +236,14 @@ export const CodingOwl = () => {
 
           {/* Timer visualization */}
           <div className="my-6 text-center flex flex-col items-center justify-center">
-            <span className="text-4xl font-black text-slate-900 dark:text-white tracking-widest block font-mono">
+            {/* ADDED ARIA: role="timer" and aria-label so screen readers announce it properly */}
+            <span 
+              role="timer"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`Pomodoro timer: ${Math.floor(timeLeft / 60)} minutes and ${timeLeft % 60} seconds remaining`}
+              className="text-4xl font-black text-slate-900 dark:text-white tracking-widest block font-mono"
+            >
               {formatTime(timeLeft)}
             </span>
             <span className="text-[10px] text-slate-400 uppercase font-bold mt-1.5 block">
