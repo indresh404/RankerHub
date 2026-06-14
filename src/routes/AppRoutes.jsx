@@ -6,6 +6,7 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 import GlobalModals from "../components/ui/GlobalModals";
 import { Settings as SettingsIcon } from "lucide-react";
+import ErrorBoundary from "../components/ui/ErrorBoundary"; 
 
 // Lazy Loaded Pages to reduce initial JS bundle
 const Home = React.lazy(() => import("../pages/Home"));
@@ -68,8 +69,6 @@ const OnboardingRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Strict guard: if the user's data explicitly says they are complete, OR if isOnboarding is false, redirect.
-  // We only allow access if they are explicitly incomplete.
   if (userData?.onboardingStatus === "complete" || !isOnboarding || (userData && userData.onboardingStatus !== "incomplete")) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -82,7 +81,7 @@ const GuestRoute = ({ children }) => {
   const { user, loading, isOnboarding } = useAuth();
 
   if (loading) {
-    return null; // Don't redirect prematurely while state is resolving
+    return null; 
   }
 
   if (user) {
@@ -95,7 +94,6 @@ const GuestRoute = ({ children }) => {
   return children;
 };
 
-// An inline settings page to keep route integrated
 const SettingsPage = () => (
   <div className="space-y-6">
     <ComingSoonCard
@@ -114,6 +112,13 @@ const SettingsPage = () => (
   </div>
 );
 
+// Helper wrapper to easily wrap lazy components with ErrorBoundary
+const withErrorBoundary = (Component, componentName, fallbackMessage) => (
+  <ErrorBoundary componentName={componentName} fallbackMessage={fallbackMessage}>
+    <Component />
+  </ErrorBoundary>
+);
+
 export const AppRoutes = () => {
   return (
     <>
@@ -121,44 +126,44 @@ export const AppRoutes = () => {
         <Routes>
           {/* Public Site Layout & Pages */}
           <Route element={<PublicLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/gitrank" element={<GitRank />} />
-            <Route path="/rankher" element={<RankHer />} />
-            <Route path="/codingverse" element={<CodingVerse />} />
-            <Route path="/codingowl" element={<CodingOwl />} />
+            <Route path="/" element={withErrorBoundary(Home, "Home", "Failed to load the homepage. Please try refreshing.")} />
+            <Route path="/gitrank" element={withErrorBoundary(GitRank, "GitRank", "GitRank couldn't load right now. Try refreshing, or sync your GitHub stats.")} />
+            <Route path="/rankher" element={withErrorBoundary(RankHer, "RankHer", "Failed to load RankHer leaderboard. Please check your connection.")} />
+            <Route path="/codingverse" element={withErrorBoundary(CodingVerse, "CodingVerse", "CodingVerse arenas failed to load. Please try again.")} />
+            <Route path="/codingowl" element={withErrorBoundary(CodingOwl, "CodingOwl", "Failed to load your habit tracker. Please try again.")} />
           </Route>
 
           {/* Standalone About Us page */}
-          <Route path="/about" element={<About />} />
+          <Route path="/about" element={withErrorBoundary(About, "About", "Failed to load the About page.")} />
 
           {/* Standalone Legal pages */}
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={withErrorBoundary(Terms, "Terms", "Failed to load Terms of Service.")} />
+          <Route path="/privacy" element={withErrorBoundary(Privacy, "Privacy", "Failed to load Privacy Policy.")} />
 
-          {/* Public Login page (standalone) - guarded from logged in users */}
-          <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+          {/* Public Login page */}
+          <Route path="/login" element={<GuestRoute>{withErrorBoundary(Login, "Login", "Failed to initialize the login portal.")}</GuestRoute>} />
           
-          {/* Onboarding page (standalone) - guarded so only incomplete profiles see it */}
-          <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
+          {/* Onboarding page */}
+          <Route path="/onboarding" element={<OnboardingRoute>{withErrorBoundary(Onboarding, "Onboarding", "Failed to load the onboarding flow.")}</OnboardingRoute>} />
           
-          {/* Layout dashboard sub-pages - locked to authenticated & fully onboarded users */}
+          {/* Layout dashboard sub-pages */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/gitrank" element={<GitRank />} />
-            <Route path="/dashboard/rankher" element={<RankHer />} />
-            <Route path="/dashboard/achievements" element={<Achievements />} />
-            <Route path="/dashboard/codingverse" element={<CodingVerse />} />
-            <Route path="/dashboard/codingowl" element={<CodingOwl />} />
-            <Route path="/dashboard/matchmaker" element={<Matchmaker />} />
-            <Route path="/dashboard/friends" element={<Friends />} />
-            <Route path="/dashboard/friends/leaderboard" element={<Friends />} />
-            <Route path="/dashboard/friends/followers" element={<Friends />} />
-            <Route path="/dashboard/friends/following" element={<Friends />} />
-            <Route path="/dashboard/profile" element={<Profile />} />
-            <Route path="/dashboard/profile/card-builder" element={<CardBuilder />} />
-            <Route path="/dashboard/profile/:username" element={<Profile />} />
+            <Route path="/dashboard" element={withErrorBoundary(Dashboard, "Dashboard", "Your dashboard failed to load. Try refreshing the page.")} />
+            <Route path="/dashboard/gitrank" element={withErrorBoundary(GitRank, "GitRank", "GitRank couldn't load right now. Try refreshing, or sync your GitHub stats.")} />
+            <Route path="/dashboard/rankher" element={withErrorBoundary(RankHer, "RankHer", "Failed to load RankHer data.")} />
+            <Route path="/dashboard/achievements" element={withErrorBoundary(Achievements, "Achievements", "Failed to load your badges and trophies.")} />
+            <Route path="/dashboard/codingverse" element={withErrorBoundary(CodingVerse, "CodingVerse", "CodingVerse challenges failed to load.")} />
+            <Route path="/dashboard/codingowl" element={withErrorBoundary(CodingOwl, "CodingOwl", "Failed to load CodingOwl streaks.")} />
+            <Route path="/dashboard/matchmaker" element={withErrorBoundary(Matchmaker, "Matchmaker", "Failed to find developer matches.")} />
+            <Route path="/dashboard/friends" element={withErrorBoundary(Friends, "Friends", "Failed to load your social network.")} />
+            <Route path="/dashboard/friends/leaderboard" element={withErrorBoundary(Friends, "Friends Leaderboard", "Failed to load friends leaderboard.")} />
+            <Route path="/dashboard/friends/followers" element={withErrorBoundary(Friends, "Followers", "Failed to load followers list.")} />
+            <Route path="/dashboard/friends/following" element={withErrorBoundary(Friends, "Following", "Failed to load following list.")} />
+            <Route path="/dashboard/profile" element={withErrorBoundary(Profile, "Profile", "Your profile data failed to load.")} />
+            <Route path="/dashboard/profile/card-builder" element={withErrorBoundary(CardBuilder, "Card Builder", "Failed to initialize the dev card builder.")} />
+            <Route path="/dashboard/profile/:username" element={withErrorBoundary(Profile, "User Profile", "This developer's profile failed to load.")} />
             <Route path="/dashboard/settings" element={<SettingsPage />} />
-            <Route path="/dashboard/auditor" element={<Auditor />} />
+            <Route path="/dashboard/auditor" element={withErrorBoundary(Auditor, "Auditor", "Security audit logs failed to load.")} />
           </Route>
 
           {/* 404 Catch All */}
