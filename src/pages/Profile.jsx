@@ -3,27 +3,7 @@ import domtoimage from 'dom-to-image-more';
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
-import {
-  MapPin,
-  Calendar,
-  Award,
-  ShieldCheck,
-  Mail,
-  Edit2,
-  X,
-  Save,
-  Plus,
-  User,
-  Building2,
-  HelpCircle,
-  Search,
-  Image,
-  AlertCircle,
-  Zap,
-  Share2,
-  Code,
-  Copy
-} from "lucide-react";
+import { MapPin, Calendar, Award, ShieldCheck, Mail, Edit2, X, Save, Plus, User, Building2, HelpCircle, Search, Image, AlertCircle, Zap, Share2, Code, Copy, Users } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import { query, collection, where, getCountFromServer, doc, getDoc, writeBatch, updateDoc, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -32,6 +12,8 @@ import RankingBreakdown from "../components/dashboard/RankingBreakdown";
 import successTick from "../assets/animations/succes_tick.json";
 import trophyAnimation from "../assets/animations/trophy.json";
 import { systemBadges } from "../constants";
+import { useComparison } from "../hooks/useComparison";
+import ProfileComparisonModal from "../components/friends/ProfileComparisonModal";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import Loader from "../components/ui/Loader";
@@ -102,6 +84,17 @@ export const Profile = () => {
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
+  const {
+    isOpen: isComparisonOpen,
+    openModal: openComparisonModal,
+    closeModal: closeComparisonModal,
+    compareUser,
+    loading: comparisonLoading,
+    error: comparisonError,
+    selectUser,
+    recentComparisons,
+    clearRecent,
+  } = useComparison();
   const [editName, setEditName] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
   const [editGender, setEditGender] = useState("");
@@ -1210,6 +1203,10 @@ if (updateData.avatar) {
           <Code className="w-3.5 h-3.5" />
           Embed
         </GradientButton>
+        <GradientButton onClick={openComparisonModal} variant="secondary" className="py-2.5 px-4 text-xs flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500">
+          <Users className="w-3.5 h-3.5" />
+          Compare
+        </GradientButton>
       </SectionHeader>
 
       <Card ref={profileCardRef} className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50">
@@ -2060,6 +2057,19 @@ if (updateData.avatar) {
         )}
       </AnimatePresence>
       
+      {/* Profile Comparison Modal */}
+      <ProfileComparisonModal
+        isOpen={isComparisonOpen}
+        onClose={closeComparisonModal}
+        currentUser={userData}
+        compareUser={compareUser}
+        loading={comparisonLoading}
+        error={comparisonError}
+        onSelectUser={selectUser}
+        recentComparisons={recentComparisons}
+        onClearRecent={clearRecent}
+      />
+
       {/* GitHub Embed Modal */}
       <AnimatePresence>
         {isEmbedModalOpen && (
