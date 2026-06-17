@@ -152,7 +152,11 @@ export const Friends = () => {
 
   const handleToggleFollow = async (developerId) => {
     const isFollowing = followingIds.includes(developerId);
-    // Directly mutate Firebase. The onSnapshot listener will automatically update the UI!
+    if (isFollowing) {
+      const dev = developers.find(d => d.id === developerId);
+      const username = dev?.username || dev?.displayName || "this user";
+      if (!window.confirm(`Are you sure you want to unfollow @${username}?`)) return;
+    }
     await toggleFollowStatus(currentUser.uid, developerId, isFollowing);
   };
 
