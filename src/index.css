@@ -8,7 +8,7 @@
 @layer base {
   body {
     font-family: 'Outfit', 'Inter', system-ui, sans-serif;
-    @apply bg-slate-50 text-slate-800 antialiased transition-colors duration-300;
+    @apply bg-slate-50 text-slate-800 antialiased;
   }
 
   body.dark {

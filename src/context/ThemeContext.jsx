@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useLayoutEffect } from "react";
 
 export const ThemeContext = createContext();
 
@@ -13,7 +13,8 @@ export const ThemeProvider = ({ children }) => {
     return systemPrefersDark ? "dark" : "light";
   });
 
-  useEffect(() => {
+  // Sync theme to DOM synchronously on mount (before paint)
+  useLayoutEffect(() => {
     const root = window.document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
