@@ -285,7 +285,7 @@ const handleJumpToMyRank = async () => {
 
       try {
         const eventsRes = await axios.get(
-          `https://api.github.com/users/${userData.githubUsername}/events`,
+          `https://api.github.com/users/${encodeURIComponent(userData.githubUsername)}/events`,
           { headers }
         );
         setEvents(eventsRes.data || []);
@@ -310,7 +310,7 @@ const handleJumpToMyRank = async () => {
 
       try {
         const reposRes = await axios.get(
-          `https://api.github.com/users/${userData.githubUsername}/repos?per_page=100&type=owner`,
+          `https://api.github.com/users/${encodeURIComponent(userData.githubUsername)}/repos?per_page=100&type=owner`,
           { headers }
         );
         setRepos(reposRes.data || []);
