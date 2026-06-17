@@ -85,14 +85,43 @@ export const Matchmaker = () => {
   const [rateLimited, setRateLimited] = useState(false);
 
   // Bookmarks State (Stored locally)
+  const safeLoadBookmarks = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      localStorage.removeItem(key);
+      return [];
+    }
+  };
+
   const [bookmarks, setBookmarks] = useState(() => {
-    const cached = localStorage.getItem(`matchmaker_bookmarks_${user?.uid || "guest"}`);
-    return cached ? JSON.parse(cached) : [];
+    const userKey = `matchmaker_bookmarks_${user?.uid || "guest"}`;
+    if (user?.uid) {
+      const saved = safeLoadBookmarks(userKey);
+      if (saved.length === 0) {
+        const guestSaved = safeLoadBookmarks("matchmaker_bookmarks_guest");
+        if (guestSaved.length > 0) {
+          localStorage.setItem(userKey, JSON.stringify(guestSaved));
+          localStorage.removeItem("matchmaker_bookmarks_guest");
+          return guestSaved;
+        }
+      }
+      return saved;
+    }
+    return safeLoadBookmarks(userKey);
   });
 
   // Save Bookmarks to localStorage when updated
   useEffect(() => {
-    localStorage.setItem(`matchmaker_bookmarks_${user?.uid || "guest"}`, JSON.stringify(bookmarks));
+    const key = `matchmaker_bookmarks_${user?.uid || "guest"}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(bookmarks));
+    } catch {
+      console.warn("Failed to save bookmarks to localStorage");
+    }
   }, [bookmarks, user]);
 
   // GitHub Search API Caller
