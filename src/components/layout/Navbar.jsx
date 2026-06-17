@@ -216,7 +216,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={() => setShowNotifications(prev => !prev)}
             className="p-2 rounded-xl border border-slate-200/50 dark:border-slate-800/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-slate-700 dark:text-slate-300 w-10 h-10 flex items-center justify-center cursor-pointer hover:shadow-sm relative"
           >
             <Bell className="w-5 h-5" />

@@ -127,119 +127,6 @@ function runJavaScript(code, timeoutMs = 2000) {
   });
 }
 
-// --- Pyodide Python Executor ---
-let pythonWorker = null;
-let pythonWorkerUrl = null;
-let isPythonWorkerReady = false;
-
-function getPythonWorker() {
-  if (pythonWorker) return pythonWorker;
-
-  const workerCode = `
-    let pyodidePromise = null;
-
-    async function initPyodide() {
-      if (pyodidePromise) return pyodidePromise;
-      pyodidePromise = (async () => {
-        importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
-        const py = await self.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/" });
-        await py.runPythonAsync(\`
-import sys, io
-_stdout = io.StringIO()
-_stderr = io.StringIO()
-sys.stdout = _stdout
-sys.stderr = _stderr
-\`);
-        return py;
-      })();
-      return pyodidePromise;
-    }
-
-    self.onmessage = async function(e) {
-      const code = e.data;
-      const logs = [];
-      const errors = [];
-
-      try {
-        const py = await initPyodide();
-        
-        await py.runPythonAsync(\`
-_stdout.seek(0)
-_stdout.truncate(0)
-_stderr.seek(0)
-_stderr.truncate(0)
-\`);
-
-        try {
-          await py.runPythonAsync(code);
-          const out = py.runPython("_stdout.getvalue()");
-          const err = py.runPython("_stderr.getvalue()");
-          if (out) logs.push(...out.split("\\n").filter(Boolean));
-          if (err) errors.push(...err.split("\\n").filter(Boolean));
-        } catch (err) {
-          errors.push(String(err));
-        }
-      } catch (loadErr) {
-        errors.push("Pyodide load error: " + loadErr.message);
-      }
-
-      self.postMessage({ logs, errors });
-    };
-  `;
-
-  const blob = new Blob([workerCode], { type: "application/javascript" });
-  pythonWorkerUrl = URL.createObjectURL(blob);
-  pythonWorker = new Worker(pythonWorkerUrl);
-  isPythonWorkerReady = false;
-  return pythonWorker;
-}
-
-function terminatePythonWorker() {
-  if (pythonWorker) {
-    pythonWorker.terminate();
-    pythonWorker = null;
-  }
-  if (pythonWorkerUrl) {
-    URL.revokeObjectURL(pythonWorkerUrl);
-    pythonWorkerUrl = null;
-  }
-  isPythonWorkerReady = false;
-}
-
-async function runPython(code, timeoutMs = 8000) {
-  const isInitialRun = !isPythonWorkerReady;
-  const currentTimeout = isInitialRun ? 20000 : timeoutMs;
-
-  return new Promise((resolve) => {
-    const worker = getPythonWorker();
-
-    let timer = setTimeout(() => {
-      terminatePythonWorker();
-      resolve({
-        logs: [],
-        errors: ["TimeoutError: Python execution timed out. (Execution exceeded limit)"]
-      });
-    }, currentTimeout);
-
-    worker.onmessage = (e) => {
-      clearTimeout(timer);
-      isPythonWorkerReady = true;
-      resolve(e.data);
-    };
-
-    worker.onerror = (err) => {
-      clearTimeout(timer);
-      terminatePythonWorker();
-      resolve({
-        logs: [],
-        errors: [`RuntimeError: ${err.message || String(err)}`]
-      });
-    };
-
-    worker.postMessage(code);
-  });
-}
-
 // --- Challenge Data ---
 const categories = [
   { name: "Arrays & Hashing", count: 48, solved: 12, icon: Target },
@@ -279,11 +166,124 @@ export const CodingVerse = () => {
   // Track input text box contents before verification
   const [inputsState, setInputsState] = useState({});
 
+  // ── Pyodide Python Executor (Issue #568) ──
+  const pythonWorkerRef = useRef(null);
+  const pythonWorkerUrlRef = useRef(null);
+  const pythonWorkerReadyRef = useRef(false);
+
+  const getPythonWorker = useCallback(() => {
+    if (pythonWorkerRef.current) return pythonWorkerRef.current;
+
+    const workerCode = `
+    let pyodidePromise = null;
+
+    async function initPyodide() {
+      if (pyodidePromise) return pyodidePromise;
+      pyodidePromise = (async () => {
+        importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
+        const py = await self.loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.1/full/" });
+        await py.runPythonAsync(\`
+import sys, io
+_stdout = io.StringIO()
+_stderr = io.StringIO()
+sys.stdout = _stdout
+sys.stderr = _stderr
+\`);
+        return py;
+      })();
+      return pyodidePromise;
+    }
+
+    self.onmessage = async function(e) {
+      const code = e.data;
+      const logs = [];
+      const errors = [];
+
+      try {
+        const py = await initPyodide();
+
+        await py.runPythonAsync(\`
+_stdout.seek(0)
+_stdout.truncate(0)
+_stderr.seek(0)
+_stderr.truncate(0)
+\`);
+
+        try {
+          await py.runPythonAsync(code);
+          const out = py.runPython("_stdout.getvalue()");
+          const err = py.runPython("_stderr.getvalue()");
+          if (out) logs.push(...out.split("\\n").filter(Boolean));
+          if (err) errors.push(...err.split("\\n").filter(Boolean));
+        } catch (err) {
+          errors.push(String(err));
+        }
+      } catch (loadErr) {
+        errors.push("Pyodide load error: " + loadErr.message);
+      }
+
+      self.postMessage({ logs, errors });
+    };
+  `;
+
+    const blob = new Blob([workerCode], { type: "application/javascript" });
+    pythonWorkerUrlRef.current = URL.createObjectURL(blob);
+    pythonWorkerRef.current = new Worker(pythonWorkerUrlRef.current);
+    pythonWorkerReadyRef.current = false;
+    return pythonWorkerRef.current;
+  }, []);
+
+  const terminatePythonWorker = useCallback(() => {
+    if (pythonWorkerRef.current) {
+      pythonWorkerRef.current.terminate();
+      pythonWorkerRef.current = null;
+    }
+    if (pythonWorkerUrlRef.current) {
+      URL.revokeObjectURL(pythonWorkerUrlRef.current);
+      pythonWorkerUrlRef.current = null;
+    }
+    pythonWorkerReadyRef.current = false;
+  }, []);
+
+  const runPython = useCallback(async (code, timeoutMs = 8000) => {
+    const isInitialRun = !pythonWorkerReadyRef.current;
+    const currentTimeout = isInitialRun ? 20000 : timeoutMs;
+
+    return new Promise((resolve) => {
+      const worker = getPythonWorker();
+
+      let timer = setTimeout(() => {
+        terminatePythonWorker();
+        resolve({
+          logs: [],
+          errors: ["TimeoutError: Python execution timed out. (Execution exceeded limit)"]
+        });
+      }, currentTimeout);
+
+      worker.onmessage = (e) => {
+        clearTimeout(timer);
+        pythonWorkerReadyRef.current = true;
+        resolve(e.data);
+      };
+
+      worker.onerror = (err) => {
+        clearTimeout(timer);
+        terminatePythonWorker();
+        resolve({
+          logs: [],
+          errors: [`RuntimeError: ${err.message || String(err)}`]
+        });
+      };
+
+      worker.postMessage(code);
+    });
+  }, [getPythonWorker, terminatePythonWorker]);
+
   useEffect(() => {
     return () => {
       terminatePythonWorker();
     };
-  }, []);
+  }, [terminatePythonWorker]);
 
   // ── Page Visibility Timer Pause/Resume (Issue #482) ──
   useEffect(() => {
