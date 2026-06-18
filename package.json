@@ -15,7 +15,7 @@
     "@vercel/og": "^0.11.1",
     "axios": "^1.17.0",
     "dom-to-image-more": "^3.10.0",
-    "firebase": "^12.14.0",
+    "firebase": "^12.15.0",
     "framer-motion": "^12.40.0",
     "html2canvas": "^1.4.1",
     "lottie-react": "^2.4.1",
