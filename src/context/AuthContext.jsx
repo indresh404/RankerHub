@@ -233,8 +233,8 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    window.addEventListener("storage", e => handleStorageChange(e));
-    return () => window.removeEventListener("storage", e => handleStorageChange(e));
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const login = async (requestRepoScope = true) => {
