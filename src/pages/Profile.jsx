@@ -35,13 +35,14 @@ import { systemBadges } from "../constants";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import Loader from "../components/ui/Loader";
+import PinnedRepos from "../components/profile/PinnedRepos";
 import GradientButton from "../components/ui/GradientButton";
 import Toast from "../components/ui/Toast";
 import collegesList from "../data/colleges.json";
 
 export const Profile = () => {
   const navigate = useNavigate();
-  const { userData: authUserData, user, setUserData, syncGitHubData } = useAuth();
+  const { userData: authUserData, user, setUserData, syncGitHubData, ghAccessToken } = useAuth();
   const { username } = useParams();
   const [publicProfile, setPublicProfile] = useState(null);
   const [loadingPublicProfile, setLoadingPublicProfile] = useState(!!username);
@@ -1562,6 +1563,11 @@ if (updateData.avatar) {
         </Card>
 
       </div>
+
+      <PinnedRepos
+        githubUsername={userData?.githubUsername}
+        accessToken={ghAccessToken}
+      />
 
       {/* Trust Score Scorecard */}
       {(() => {
