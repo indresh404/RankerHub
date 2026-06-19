@@ -10,6 +10,7 @@ export const sidebarLinks = [
   { label: "Profile", path: "/dashboard/profile", icon: "User" },
   { label: "Settings", path: "/dashboard/settings", icon: "Settings" },
   { label: "Repo Auditor", path: "/dashboard/auditor", icon: "Activity" },
+  { label: "Repo Health", path: "/dashboard/repo-health", icon: "TrendingUp" },
   { label: "How it works", path: "?modal=how-it-works", icon: "HelpCircle" },
   { label: "About Us", path: "/about", icon: "Info" }
 ];
@@ -44,9 +45,9 @@ export const uiGradients = {
 };
 
 export const systemBadges = [
-  { id: "b1", name: "Pioneer", description: "First 100 users", color: "from-amber-500 to-orange-500" },
-  { id: "b2", name: "Code Warrior", description: "100+ contributions", color: "from-blue-500 to-indigo-500" },
-  { id: "b3", name: "Streak Master", description: "10+ day streak", color: "from-red-500 to-pink-500" },
-  { id: "b4", name: "CSS Sorceress", description: "UI layout designer", color: "from-purple-500 to-violet-500" },
-  { id: "b5", name: "Ranker Ambassador", description: "10+ successful referrals", color: "from-emerald-500 to-teal-500" }
+  { id: "b1", name: "Pioneer", icon: "🦅", description: "First 100 users", color: "from-amber-500 to-orange-500" },
+  { id: "b2", name: "Code Warrior", icon: "⚔️", description: "100+ contributions", color: "from-blue-500 to-indigo-500" },
+  { id: "b3", name: "Streak Master", icon: "🔥", description: "10+ day streak", color: "from-red-500 to-pink-500" },
+  { id: "b4", name: "CSS Sorceress", icon: "🎨", description: "UI layout designer", color: "from-purple-500 to-violet-500" },
+  { id: "b5", name: "Ranker Ambassador", icon: "🦈", description: "10+ successful referrals", color: "from-emerald-500 to-teal-500" }
 ];

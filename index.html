@@ -14,6 +14,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Mystery+Quest&family=Sedgwick+Ave+Display&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <title>RankerHub — Gamified Developer Leaderboard</title>
+
+    <!-- Apply theme before first paint to prevent flash of light/dark mode on refresh -->
+    <script>
+      (function () {
+        try {
+          var savedTheme = localStorage.getItem("theme");
+          var theme = savedTheme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+            document.documentElement.style.colorScheme = "dark";
+          } else {
+            document.documentElement.style.colorScheme = "light";
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body>

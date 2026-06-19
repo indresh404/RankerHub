@@ -2,18 +2,22 @@ import React from "react";
 import { Flame, Check } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import Card from "../ui/Card";
+import { toLocalDateString, resolveTimezone } from "../../utils/streakCalculator";
 
 export const StreakCard = () => {
   const { userData } = useAuth();
   
   const activeStreak = userData?.streak || 0;
   const longestStreak = Math.max(userData?.longestStreak || 0, activeStreak);
-  
-  // Calculate today's status
+  const streakFreezes = userData?.streakFreezes || 0;
+
+  // Calculate today's status using the user's stored timezone
   const now = new Date();
-  const todayStr = now.toDateString();
+  const timeZone = resolveTimezone(userData?.timezone);
+  const todayStr = toLocalDateString(now, timeZone);
   const lastLogin = userData?.lastLogin ? new Date(userData?.lastLogin) : null;
-  const loggedInToday = lastLogin && lastLogin.toDateString() === todayStr;
+  const loggedInToday =
+    lastLogin && toLocalDateString(lastLogin, timeZone) === todayStr;
   
   const dailyProgressMins = loggedInToday ? 60 : 0;
   const dailyGoalMins = 60;
@@ -40,15 +44,18 @@ export const StreakCard = () => {
       const dayStr = daysOfWeek[i];
       const dateLabel = dayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       
-      let status = "pending";
-      const diffTime = now.getTime() - dayDate.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      const dayDateStr = toLocalDateString(dayDate, timeZone);
 
-      if (dayDate.toDateString() === todayStr) {
+      let status = "pending";
+
+      if (dayDateStr === todayStr) {
         status = loggedInToday ? "completed" : "current";
       } else if (dayDate < now) {
-        // Past day
-        const maxCompletedDiff = loggedInToday ? activeStreak - 1 : activeStreak;
+        // Past day — infer completion from active streak length (timezone-aware)
+        const dayMs = Date.parse(`${dayDateStr}T12:00:00Z`);
+        const todayMs = Date.parse(`${todayStr}T12:00:00Z`);
+        const diffDays = Math.round((todayMs - dayMs) / (1000 * 60 * 60 * 24));
+        const maxCompletedDiff = Math.max(0, loggedInToday ? activeStreak - 1 : activeStreak);
         if (diffDays >= 0 && diffDays <= maxCompletedDiff) {
           status = "completed";
         }
@@ -76,10 +83,18 @@ export const StreakCard = () => {
           <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">Streak Tracker</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">Keep up your daily coding habit</p>
         </div>
-        <div className="flex items-center gap-1 text-orange-500 dark:text-orange-400 font-extrabold text-sm animate-pulse">
-          <Flame className="w-5 h-5 fill-orange-500/20" />
-          <span>{activeStreak} Days</span>
-        </div>
+       <div className="flex flex-col items-end gap-1">
+  <div className="flex items-center gap-1 text-orange-500 dark:text-orange-400 font-extrabold text-sm animate-pulse">
+    <Flame className="w-5 h-5 fill-orange-500/20" />
+    <span>{activeStreak} Days</span>
+  </div>
+  {streakFreezes > 0 && (
+    <div className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-bold">
+      <span>🧊</span>
+      <span>{streakFreezes} Freeze{streakFreezes > 1 ? "s" : ""}</span>
+    </div>
+  )}
+</div>
       </div>
 
       {/* Progress Circle & Metrics */}

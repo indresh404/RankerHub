@@ -12,13 +12,12 @@ export const useSidebar = () => {
     localStorage.setItem("sidebar_collapsed", JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  // Automatically collapse sidebar on tablet screens, and reset mobile drawer on resize
+  // Automatically collapse sidebar on tablet/narrow screens, and reset mobile drawer on resize.
+  // On wider (desktop) screens, do not override the user's persisted collapse preference.
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setIsCollapsed(true);
-      } else {
-        setIsCollapsed(false);
       }
       if (window.innerWidth >= 768) {
         setIsMobileOpen(false);

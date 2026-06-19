@@ -173,7 +173,7 @@ export const Achievements = () => {
                       !info.unlocked ? "brightness-75 saturate-50" : ""
                     }`}
                   >
-                    <span className="text-xl font-black text-white uppercase">{badge.name[0]}</span>
+                    <span className="text-2xl">{badge.icon}</span>
                     
                     {/* Locked / Unlocked Indicator */}
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
@@ -311,7 +311,7 @@ export const Achievements = () => {
                 <div className="flex flex-col items-center text-center space-y-4 relative z-10">
                   {/* Glowing Big Badge representation */}
                   <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${selectedBadge.color} flex items-center justify-center shadow-xl shadow-indigo-500/10 relative`}>
-                    <span className="text-4xl font-black text-white uppercase">{selectedBadge.name[0]}</span>
+                    <span className="text-5xl">{selectedBadge.icon}</span>
                     
                     {/* Orbit Ring */}
                     <div className="absolute inset-0 rounded-3xl border border-white/20 animate-pulse" />

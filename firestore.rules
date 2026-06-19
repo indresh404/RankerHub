@@ -159,6 +159,11 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.followerId == request.auth.uid;
     }
 
+    match /users/{uid}/rankHistory/{date} {
+      allow read: if true;
+      allow write: if isOwner(uid);
+    }
+
     // Global lock for other collections
     match /{document=**} {
       allow read, write: if false;

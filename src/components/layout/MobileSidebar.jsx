@@ -16,7 +16,8 @@ import {
   Award,
   UsersRound,
   Search,
-  Activity
+  Activity,
+  TrendingUp
 } from "lucide-react";
 import { Github } from "../ui/Icons";
 import { sidebarLinks } from "../../constants";
@@ -39,7 +40,8 @@ const iconMap = {
   Award,
   UsersRound,
   Search,
-  Activity
+  Activity,
+  TrendingUp
 };
 
 const isLinkActive = (pathname, path) => {

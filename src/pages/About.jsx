@@ -229,14 +229,14 @@ export const About = () => {
                 }}
               />
               <TeamCard
-                username="divyagsharma2006-blip"
-                avatar="https://github.com/divyagsharma2006-blip.png"
+                username="divyaa404"
+                avatar="https://github.com/divyaa404.png"
                 role="Co-Founder & Product/Design"
-                profileLink="https://github.com/divyagsharma2006-blip"
+                profileLink="https://github.com/divyaa404"
                 description="Helping improve RankerHub through collaboration, features, and community contributions."
                 isOwner={true}
                 links={{
-                  github: "https://github.com/divyagsharma2006-blip",
+                  github: "https://github.com/divyaa404",
                   linkedin: "https://www.linkedin.com/in/divya-sharma-57673536b",
                   instagram: "https://www.instagram.com/_s.divyaaaa/",
                   email: "mailto:indreshsuresh95@gmail.com"

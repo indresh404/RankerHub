@@ -9,7 +9,9 @@ import {
   orderBy,
   documentId,
   writeBatch,
-  increment
+  increment,
+  deleteDoc,
+  setDoc
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
@@ -113,35 +115,36 @@ export const toggleFollowStatus = async (currentUserId, developerId, isFollowing
   const followDocId = `${currentUserId}_${developerId}`;
   const followRef = doc(db, "follows", followDocId);
 
-  // 1. Initialize atomic write batch
-  const batch = writeBatch(db);
-
-  // 2. Select a randomized shard document to spread lock contention uniformly
-  const randomShardId = Math.floor(Math.random() * SHARD_COUNT).toString();
-  const globalConnectionsShardRef = doc(db, "aggregates", "global_connections", "shards", randomShardId);
-
+  // 1. Perform the core follow/unfollow write on its own.
+  // This must succeed independently of the analytics shard counter below,
+  // otherwise a permission error on the shard write silently blocks the
+  // entire unfollow action (the original batch.commit() would throw and
+  // roll back, including the delete, with no visible error to the user).
   try {
     if (isFollowing) {
       // Unfollow
-      batch.delete(followRef);
-      // Decrement the distributed shard counter atomically
-      batch.set(globalConnectionsShardRef, { count: increment(-1) }, { merge: true });
+      await deleteDoc(followRef);
     } else {
       // Follow
-      batch.set(followRef, {
+      await setDoc(followRef, {
         followerId: currentUserId,
         followedId: developerId,
         createdAt: new Date().toISOString()
       });
-      // Increment the distributed shard counter atomically
-      batch.set(globalConnectionsShardRef, { count: increment(1) }, { merge: true });
     }
-
-    // Commit all updates atomically in a single network transaction write
-    await batch.commit();
   } catch (error) {
-    console.error("Error toggling follow status with batch:", error);
+    console.error("Error toggling follow status:", error);
     throw error;
+  }
+
+  // 2. Best-effort update of the distributed shard counter for global stats.
+  // Failures here should not affect the user's follow/unfollow state.
+  try {
+    const randomShardId = Math.floor(Math.random() * SHARD_COUNT).toString();
+    const globalConnectionsShardRef = doc(db, "aggregates", "global_connections", "shards", randomShardId);
+    await setDoc(globalConnectionsShardRef, { count: increment(isFollowing ? -1 : 1) }, { merge: true });
+  } catch (error) {
+    console.error("Error updating connection shard counter:", error);
   }
 };
 

@@ -29,8 +29,7 @@ export const ActivityFeed = () => {
       </div>
 
       {/* Timeline items */}
-      <div className="flex-1 mt-6 relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-slate-200 dark:before:bg-slate-800 overflow-y-auto max-h-[350px] scrollbar-none">
-        <motion.div
+        <div className="flex-1 mt-6 relative pl-6 pr-2 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-slate-200 dark:before:bg-slate-800 overflow-y-auto max-h-[350px] scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">        <motion.div
           variants={staggerContainer(0.08, 0.05)}
           initial="hidden"
           animate="visible"

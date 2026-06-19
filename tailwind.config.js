@@ -1,3 +1,5 @@
+import tailwindScrollbar from 'tailwind-scrollbar';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -29,8 +31,10 @@ export default {
           '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
           '100%': { transform: 'translate(0px, 0px) scale(1)' },
         }
-      }
-    },
+      },
+    }
   },
-  plugins: [],
+  plugins: [
+    tailwindScrollbar,
+  ],
 }

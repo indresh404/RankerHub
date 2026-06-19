@@ -30,7 +30,7 @@ const platformColors = [
 ];
 
 export const Dashboard = () => {
-  const { userData } = useAuth();
+  const { userData, user } = useAuth();
   const [rank, setRank] = useState("Loading...");
   
   // Initialize with 168 empty cells (24 weeks * 7 days)
@@ -161,13 +161,19 @@ export const Dashboard = () => {
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
         setRank(`#${currentRank}`);
+
+        // Save rank snapshot for the authenticated user
+        if (user?.uid) {
+          const { saveRankSnapshot } = await import("../services/rankHistoryService");
+          await saveRankSnapshot(user.uid, currentRank, userData.points.totalPoints, userData.timezone);
+        }
       } catch (err) {
         console.error("Error calculating dynamic rank:", err);
         setRank("#N/A");
       }
     };
     fetchRank();
-  }, [userData]);
+  }, [userData, user]);
 
   const totalPoints = userData?.points?.totalPoints || 0;
   const devLevel = Math.floor(totalPoints / 250) + 1;

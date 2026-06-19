@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, 
@@ -16,7 +16,7 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
-import { doc, updateDoc, runTransaction, query, collection, where, getCountFromServer, getDocs } from "firebase/firestore";
+import { doc, updateDoc, query, collection, where, getCountFromServer, getDocs } from "firebase/firestore";
 
 // --- Language Definitions ---
 const LANGUAGES = [
@@ -258,6 +258,18 @@ const recentChallenges = [
 // --- Main CodingVerse Component ---
 export const CodingVerse = () => {
   const { userData, user } = useAuth();
+
+  // ── Timer State (Issue #482) ──
+  const [questionTimers, setQuestionTimers] = useState(() => {
+    const timers = {};
+    [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].forEach(id => {
+      timers[id] = 120; // 120 seconds per question
+    });
+    return timers;
+  });
+  const [activeTimerQId, setActiveTimerQId] = useState(null);
+  const timerRef = useRef(null);
+  const isHiddenRef = useRef(false);
   
   // Solved, Attempted and Answer states fallback for guest users
   const [localSolvedQuestions, setLocalSolvedQuestions] = useState([]);
@@ -272,6 +284,44 @@ export const CodingVerse = () => {
       terminatePythonWorker();
     };
   }, []);
+
+  // ── Page Visibility Timer Pause/Resume (Issue #482) ──
+  useEffect(() => {
+    const startTimer = () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        if (!isHiddenRef.current && activeTimerQId !== null) {
+          setQuestionTimers(prev => {
+            const current = prev[activeTimerQId];
+            if (current <= 1) {
+              clearInterval(timerRef.current);
+              return { ...prev, [activeTimerQId]: 0 };
+            }
+            return { ...prev, [activeTimerQId]: current - 1 };
+          });
+        }
+      }, 1000);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isHiddenRef.current = true;
+      } else {
+        isHiddenRef.current = false;
+      }
+    };
+
+    if (activeTimerQId !== null) {
+      startTimer();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(timerRef.current);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [activeTimerQId]);
 
   // Track solved, attempted, and answers state either from Firestore (if logged in) or local state
   const answeredQuestions = user && userData
@@ -323,9 +373,6 @@ export const CodingVerse = () => {
       setLoadingLeaderboard(true);
       setLeaderboardError("");
       try {
-        // Alternative Solution: 
-        // Fetch all completed users without 'orderBy' to avoid the composite index requirement.
-        // Then sort the array client-side.
         const q = query(
           collection(db, "users"),
           where("onboardingStatus", "==", "complete")
@@ -336,15 +383,14 @@ export const CodingVerse = () => {
           ...doc.data(),
         }));
         
-        // Client-side sort and limit
         const sortedUsers = users
-          .filter(u => (u.points?.codingVersePoints || 0) > 0) // Optional: only show users with >0 points
+          .filter(u => (u.points?.codingVersePoints || 0) > 0)
           .sort((a, b) => {
             const pointsA = a.points?.codingVersePoints || 0;
             const pointsB = b.points?.codingVersePoints || 0;
-            return pointsB - pointsA; // Descending order
+            return pointsB - pointsA;
           })
-          .slice(0, 20); // Limit to top 20
+          .slice(0, 20);
           
         setLeaderboardUsers(sortedUsers);
       } catch (err) {
@@ -530,7 +576,7 @@ export const CodingVerse = () => {
   const [code, setCode] = useState(STARTER_CODE.javascript);
   const [output, setOutput] = useState([]);
   const [running, setRunning] = useState(false);
-  const [pyodideStatus, setPyodideStatus] = useState("idle"); // idle | loading | ready
+  const [pyodideStatus, setPyodideStatus] = useState("idle");
 
   const handleLangChange = (newLang) => {
     setLang(newLang);
@@ -587,6 +633,13 @@ export const CodingVerse = () => {
     fetchCodingVerseRank();
   }, [user, userData]);
 
+  // ── Timer helper: format seconds as MM:SS (Issue #482) ──
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   const checkCodeCorrectness = (qId, val) => {
     const cleanVal = val.toLowerCase().replace(/\s+/g, "");
     if (qId === 11) {
@@ -627,126 +680,98 @@ export const CodingVerse = () => {
       setShowHeartAnimation((prev) => ({ ...prev, [qId]: false }));
     }, 800);
   };
+
   const handleVerifyAnswer = async (qId, isCorrect, submittedVal) => {
-      // Prevent double attempts
-      if (attemptedQuestions.includes(qId)) return;
+    // Prevent double attempts
+    if (attemptedQuestions.includes(qId)) return;
 
-      const targetQ = theoryQuestions.find(item => item.id === qId);
-      const difficulty = targetQ?.difficulty || "Easy";
-      const pointsMap = { "Easy": 100, "Medium": 150, "Hard": 200 };
-      const earnedPoints = pointsMap[difficulty];
+    // ── Stop timer on answer submission (Issue #482) ──
+    clearInterval(timerRef.current);
+    setActiveTimerQId(null);
 
-      if (user && userData) {
-        const userRef = doc(db, "users", user.uid);
-        let earnedStreakPointsForLog = 0;
+    const targetQ = theoryQuestions.find(item => item.id === qId);
+    const difficulty = targetQ?.difficulty || "Easy";
+    const pointsMap = { "Easy": 100, "Medium": 150, "Hard": 200 };
+    const earnedPoints = pointsMap[difficulty];
 
-        try {
-          await runTransaction(db, async (transaction) => {
-            // Read live Firestore data inside the transaction to prevent stale
-            // client-side userData from overwriting concurrent updates
-            // (e.g. multiple tabs/devices answering questions in quick succession).
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) throw new Error("User document not found");
+    const newAttemptedQuestions = [...attemptedQuestions, qId];
+    let newSolvedQuestions = [...answeredQuestions];
+    let newCodingVersePoints = userData?.points?.codingVersePoints || 0;
+    let newTotalPoints = userData?.points?.totalPoints || 0;
+    
+    // CodingVerse Streak Implementation (Issue #201)
+    let newCodingVerseStreak = userData?.codingVerseStreak || 0;
+    let newStreakPoints = userData?.points?.streakPoints || 0;
+    let newLastCodingVerseSolveDate = userData?.lastCodingVerseSolveDate || null;
+    let earnedStreakPoints = 0;
 
-            const liveData = userDoc.data();
+    if (isCorrect) {
+      newSolvedQuestions = [...answeredQuestions, qId];
+      newCodingVersePoints += earnedPoints;
 
-            const liveAttempted = liveData.attemptedCodingVerseQuestions || [];
-            // Re-check against live data: if another session already recorded
-            // this attempt, bail out of the transaction entirely.
-            if (liveAttempted.includes(qId)) {
-              return;
-            }
+      const today = new Date();
+      const todayUTCStr = today.toISOString().split('T')[0];
+      const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
 
-            const liveAnswered = liveData.solvedCodingVerseQuestions || [];
-            const liveAnswersState = liveData.codingVerseAnswers || {};
+      if (newLastCodingVerseSolveDate) {
+        if (todayUTCStr !== newLastCodingVerseSolveDate) {
+          const lastDateParts = newLastCodingVerseSolveDate.split('-');
+          const lastUTC = Date.UTC(parseInt(lastDateParts[0]), parseInt(lastDateParts[1]) - 1, parseInt(lastDateParts[2]));
+          const diffDays = Math.floor((todayUTC - lastUTC) / (1000 * 60 * 60 * 24));
 
-            const newAttemptedQuestions = [...liveAttempted, qId];
-            let newSolvedQuestions = [...liveAnswered];
-            let newCodingVersePoints = liveData.points?.codingVersePoints || 0;
-            let newTotalPoints = liveData.points?.totalPoints || 0;
-
-            // CodingVerse Streak Implementation (Issue #201)
-            let newCodingVerseStreak = liveData.codingVerseStreak || 0;
-            let newStreakPoints = liveData.points?.streakPoints || 0;
-            let newLastCodingVerseSolveDate = liveData.lastCodingVerseSolveDate || null;
-            let earnedStreakPoints = 0;
-
-            if (isCorrect) {
-              newSolvedQuestions = [...liveAnswered, qId];
-              newCodingVersePoints += earnedPoints;
-
-              // Ensure timezone-agnostic boundaries using strict UTC Date strings
-              const today = new Date();
-              const todayUTCStr = today.toISOString().split('T')[0];
-              const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-
-              if (newLastCodingVerseSolveDate) {
-                if (todayUTCStr !== newLastCodingVerseSolveDate) {
-                  const lastDateParts = newLastCodingVerseSolveDate.split('-');
-                  const lastUTC = Date.UTC(parseInt(lastDateParts[0]), parseInt(lastDateParts[1]) - 1, parseInt(lastDateParts[2]));
-                  const diffDays = Math.floor((todayUTC - lastUTC) / (1000 * 60 * 60 * 24));
-
-                  if (diffDays === 1) {
-                    newCodingVerseStreak += 1; // Maintained consecutive sequence
-                  } else if (diffDays > 1) {
-                    newCodingVerseStreak = 1; // Broken streak, reset
-                  }
-                  earnedStreakPoints = 5; // +5 XP for each new active solving day
-                  newLastCodingVerseSolveDate = todayUTCStr;
-                }
-              } else {
-                newCodingVerseStreak = 1;
-                earnedStreakPoints = 5;
-                newLastCodingVerseSolveDate = todayUTCStr;
-              }
-
-              newStreakPoints += earnedStreakPoints;
-              newTotalPoints = (liveData.points?.gitRankPoints || 0) +
-                              (liveData.points?.referralPoints || 0) +
-                              newStreakPoints +
-                              newCodingVersePoints;
-            }
-
-            earnedStreakPointsForLog = earnedStreakPoints;
-
-            const newAnswersState = { ...liveAnswersState, [qId]: submittedVal };
-            const liveHubCoins = liveData.hubCoins || 0;
-
-            const updatePayload = {
-              "points.codingVersePoints": newCodingVersePoints,
-              "points.totalPoints": newTotalPoints,
-              "hubCoins": liveHubCoins + (isCorrect ? earnedPoints : 0),
-              "solvedCodingVerseQuestions": newSolvedQuestions,
-              "attemptedCodingVerseQuestions": newAttemptedQuestions,
-              "codingVerseAnswers": newAnswersState
-            };
-
-            // Only update streak data if they successfully answered and progressed
-            if (isCorrect) {
-              updatePayload["points.streakPoints"] = newStreakPoints;
-              updatePayload["codingVerseStreak"] = newCodingVerseStreak;
-              updatePayload["lastCodingVerseSolveDate"] = newLastCodingVerseSolveDate;
-            }
-
-            transaction.update(userRef, updatePayload);
-          });
-
-          console.log(`Submitted answer for ${qId}. Correct: ${isCorrect}. Arena Points: ${isCorrect ? earnedPoints : 0}. Streak Points: ${earnedStreakPointsForLog}`);
-        } catch (err) {
-          console.error("Failed to update points in database:", err);
+          if (diffDays === 1) {
+            newCodingVerseStreak += 1;
+          } else if (diffDays > 1) {
+            newCodingVerseStreak = 1;
+          }
+          earnedStreakPoints = 5;
+          newLastCodingVerseSolveDate = todayUTCStr;
         }
       } else {
-        // Fallback local update for guests
-        const newAttemptedQuestions = [...attemptedQuestions, qId];
-        const newAnswersState = { ...answersState, [qId]: submittedVal };
-
-        setLocalAttemptedQuestions(newAttemptedQuestions);
-        setLocalAnswersState(newAnswersState);
-        if (isCorrect) {
-          setLocalSolvedQuestions([...answeredQuestions, qId]);
-        }
+        newCodingVerseStreak = 1;
+        earnedStreakPoints = 5;
+        newLastCodingVerseSolveDate = todayUTCStr;
       }
-    };
+
+      newStreakPoints += earnedStreakPoints;
+      newTotalPoints = (userData?.points?.gitRankPoints || 0) + 
+                       (userData?.points?.referralPoints || 0) + 
+                       newStreakPoints + 
+                       newCodingVersePoints;
+    }
+
+    const newAnswersState = { ...answersState, [qId]: submittedVal };
+
+    if (user && userData) {
+      const userRef = doc(db, "users", user.uid);
+      try {
+        const updatePayload = {
+          "points.codingVersePoints": newCodingVersePoints,
+          "points.totalPoints": newTotalPoints,
+          "hubCoins": (userData.hubCoins || 0) + (isCorrect ? earnedPoints : 0),
+          "solvedCodingVerseQuestions": newSolvedQuestions,
+          "attemptedCodingVerseQuestions": newAttemptedQuestions,
+          "codingVerseAnswers": newAnswersState
+        };
+
+        if (isCorrect) {
+          updatePayload["points.streakPoints"] = newStreakPoints;
+          updatePayload["codingVerseStreak"] = newCodingVerseStreak;
+          updatePayload["lastCodingVerseSolveDate"] = newLastCodingVerseSolveDate;
+        }
+
+        await updateDoc(userRef, updatePayload);
+      } catch (err) {
+        console.error("Failed to update points in database:", err);
+      }
+    } else {
+      setLocalAttemptedQuestions(newAttemptedQuestions);
+      setLocalAnswersState(newAnswersState);
+      if (isCorrect) {
+        setLocalSolvedQuestions(newSolvedQuestions);
+      }
+    }
+  };
 
   // Calculate total XP gained from solved questions dynamically
   const codingVerseXPGained = answeredQuestions.reduce((sum, qId) => {
@@ -777,7 +802,6 @@ export const CodingVerse = () => {
             </p>
           </div>
 
-          {/* Language Selector */}
           <div className="flex rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
             {LANGUAGES.map((l) => (
               <button
@@ -795,7 +819,6 @@ export const CodingVerse = () => {
           </div>
         </div>
 
-        {/* Code Editor (simple textarea) */}
         <div className="relative">
           <textarea
             value={code}
@@ -833,7 +856,6 @@ export const CodingVerse = () => {
           </button>
         </div>
 
-        {/* Output Console */}
         <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 min-h-[100px] font-mono text-xs">
           <div className="text-slate-500 font-bold text-[10px] uppercase mb-2 flex items-center gap-1.5">
             <Square className="w-2.5 h-2.5 fill-current text-emerald-400" />
@@ -877,9 +899,7 @@ export const CodingVerse = () => {
               Given two strings <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word1</code> and <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word2</code>, return the minimum number of operations required to convert <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word1</code> to <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word2</code>.
             </p>
             <div className="flex items-center gap-4 text-xs font-bold text-slate-500 pt-2">
-              <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full border text-red-500 bg-red-500/10 border-red-500/25">
-                Hard (80 XP)
-              </span>
+              <span>Difficulty: <span className="text-red-500">Hard (80 XP)</span></span>
               <span>•</span>
               <span>Target Time: 45 mins</span>
             </div>
@@ -910,7 +930,6 @@ export const CodingVerse = () => {
             const currentAnsweredVal = answersState[q.id] || "";
             const isLiked = likedPosts[q.id] === true;
             const likesVal = likesCount[q.id] || 120;
-            
             const difficultyXP = q.difficulty === "Easy" ? 100 : q.difficulty === "Medium" ? 150 : 200;
 
             return (
@@ -948,6 +967,17 @@ export const CodingVerse = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* ── Timer Display (Issue #482) ── */}
+                    {activeTimerQId === q.id && !isAttempted && (
+                      <div className={`px-2.5 py-0.5 text-[9px] font-extrabold rounded-lg border ${
+                        questionTimers[q.id] <= 30
+                          ? "bg-red-500/10 text-red-500 border-red-500/20 animate-pulse"
+                          : "bg-slate-500/10 text-slate-400 border-slate-500/20"
+                      }`}>
+                        ⏱ {formatTime(questionTimers[q.id])}
+                      </div>
+                    )}
+
                     <span className={`px-2.5 py-0.5 text-[9px] font-extrabold rounded-lg border ${
                       q.difficulty === "Easy"
                         ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
@@ -969,6 +999,13 @@ export const CodingVerse = () => {
                 {/* 2. Post Media / Code Box Container */}
                 <div 
                   onDoubleClick={() => handleDoubleTap(q.id)}
+                  onClick={() => {
+                    // ── Start timer on first click of code box (Issue #482) ──
+                    if (!isAttempted && activeTimerQId !== q.id) {
+                      setActiveTimerQId(q.id);
+                      setQuestionTimers(prev => ({ ...prev, [q.id]: 120 }));
+                    }
+                  }}
                   className="relative bg-slate-950 p-6 min-h-[160px] flex flex-col justify-center border-b border-slate-100 dark:border-slate-800 select-none group cursor-pointer"
                 >
                   <div className="absolute top-2 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[9px] font-bold text-slate-500 tracking-wide flex items-center gap-1">
@@ -1231,207 +1268,203 @@ export const CodingVerse = () => {
               >
                 {/* User Progress Stats Card */}
                 <Card className="p-6 border-purple-500/15 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 select-none">
-            <div className="space-y-4">
-              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 uppercase tracking-wider">
-                Arena Progress
-              </span>
-              
-              <div className="flex items-center gap-3">
-                {/* Real User Profile picture */}
-                <img 
-                  src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"} 
-                  alt="Profile Avatar"
-                  className="w-12 h-12 rounded-full object-cover shadow border border-purple-450/20"
-                />
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white my-0 leading-tight">
-                    {userData?.name || "Ranker Guest"}
-                  </h3>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block mt-1 tracking-wider">
-                    {userData?.githubStats?.primaryLanguage || "Developer"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Bar & CodingVerse dynamic leaderboard rank */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
-                <div className="flex justify-between items-center text-xs font-bold text-slate-400">
-                  <span>Solved / Attempted</span>
-                  <span className="text-purple-600 dark:text-purple-400 font-extrabold">{answeredQuestions.length} / {attemptedQuestions.length}</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    style={{ width: `${(answeredQuestions.length / 15) * 100}%` }}
-                    className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-300"
-                  />
-                </div>
-                <div className="flex justify-between items-center text-xs font-bold pt-2 border-b border-slate-100 dark:border-slate-800/50 pb-2">
-                  <span className="text-slate-400">CodingVerse XP Gained</span>
-                  <span className="text-emerald-500 font-extrabold">+{codingVerseXPGained} XP</span>
-                </div>
-                
-                {/* NEW LOGIC UI: Live CodingVerse Streak Display */}
-                <div className="flex justify-between items-center text-xs font-bold pt-1 border-b border-slate-100 dark:border-slate-800/50 pb-2">
-                  <span className="text-slate-400">Arena Streak</span>
-                  <span className="text-orange-500 font-extrabold">🔥 {userData?.codingVerseStreak || 0} Days</span>
-                </div>
-
-                {/* Displaying CodingVerse global leaderboard rank */}
-                <div className="flex justify-between items-center text-xs font-bold pt-1">
-                  <span className="text-slate-400">CodingVerse Rank</span>
-                  <span className="text-purple-600 dark:text-purple-400 font-extrabold">{codingVerseRank}</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Categories Grid (from 215) */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
-              Top Categories
-            </h4>
-            <div className="grid grid-cols-1 gap-4">
-              {categories.map((cat, idx) => {
-                const Icon = cat.icon;
-                return (
-                  <Card key={idx} className="p-4 flex items-center justify-between group border-slate-200/50 dark:border-slate-800/50">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60 w-9 h-9 flex items-center justify-center text-slate-500 border border-slate-200/20 dark:border-slate-800/20 group-hover:scale-110 transition-transform duration-200">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h5 className="text-[11px] font-bold text-slate-900 dark:text-white my-0">{cat.name}</h5>
-                        <p className="text-[9px] text-slate-500 uppercase font-bold">{cat.solved} / {cat.count} Solved</p>
-                      </div>
-                    </div>
-                    <div className="w-12 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-violet-500" style={{ width: `${(cat.solved / cat.count) * 100}%` }} />
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Algorithmic Catalog (from 215) */}
-          <Card className="p-4 border-slate-200/50 dark:border-slate-800/50">
-            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0 mb-4">
-              Featured Challenges
-            </h4>
-            <div className="space-y-3">
-              {recentChallenges.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Code2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[100px]">{item.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-1.5 py-0.5 text-[8px] font-bold rounded-full border ${item.diffColor}`}>
-                      {item.difficulty[0]}
+                  <div className="space-y-4">
+                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 uppercase tracking-wider">
+                      Arena Progress
                     </span>
-                    <button
-                      onClick={() => {
-                        setCode(STARTER_CODE.javascript);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-[10px] font-bold text-violet-600 hover:underline cursor-pointer"
-                    >
-                      Solve
-                    </button>
+                    
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"} 
+                        alt="Profile Avatar"
+                        className="w-12 h-12 rounded-full object-cover shadow border border-purple-450/20"
+                      />
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white my-0 leading-tight">
+                          {userData?.name || "Ranker Guest"}
+                        </h3>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block mt-1 tracking-wider">
+                          {userData?.githubStats?.primaryLanguage || "Developer"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-400">
+                        <span>Solved / Attempted</span>
+                        <span className="text-purple-600 dark:text-purple-400 font-extrabold">{answeredQuestions.length} / {attemptedQuestions.length}</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${(answeredQuestions.length / 15) * 100}%` }}
+                          className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-300"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center text-xs font-bold pt-2 border-b border-slate-100 dark:border-slate-800/50 pb-2">
+                        <span className="text-slate-400">CodingVerse XP Gained</span>
+                        <span className="text-emerald-500 font-extrabold">+{codingVerseXPGained} XP</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs font-bold pt-1 border-b border-slate-100 dark:border-slate-800/50 pb-2">
+                        <span className="text-slate-400">Arena Streak</span>
+                        <span className="text-orange-500 font-extrabold">🔥 {userData?.codingVerseStreak || 0} Days</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs font-bold pt-1">
+                        <span className="text-slate-400">CodingVerse Rank</span>
+                        <span className="text-purple-600 dark:text-purple-400 font-extrabold">{codingVerseRank}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Categories Grid */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
+                    Top Categories
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {categories.map((cat, idx) => {
+                      const Icon = cat.icon;
+                      return (
+                        <Card key={idx} className="p-4 flex items-center justify-between group border-slate-200/50 dark:border-slate-800/50">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800/60 w-9 h-9 flex items-center justify-center text-slate-500 border border-slate-200/20 dark:border-slate-800/20 group-hover:scale-110 transition-transform duration-200">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h5 className="text-[11px] font-bold text-slate-900 dark:text-white my-0">{cat.name}</h5>
+                              <p className="text-[9px] text-slate-500 uppercase font-bold">{cat.solved} / {cat.count} Solved</p>
+                            </div>
+                          </div>
+                          <div className="w-12 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-violet-500" style={{ width: `${(cat.solved / cat.count) * 100}%` }} />
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="leaderboard"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-          >
-            {/* CodingVerse Leaderboard Card (Issue #302) */}
-            <Card className="p-0 overflow-hidden border-purple-500/15">
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-purple-500/5 to-transparent">
-                <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
-                  Global Standings
-                </h4>
-              </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/40 max-h-[440px] overflow-y-auto">
-                {loadingLeaderboard ? (
-                  <div className="p-8 flex flex-col items-center justify-center gap-2 text-slate-400">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Loading...</span>
-                  </div>
-                ) : leaderboardError ? (
-                  <div className="p-8 text-center text-red-500">
-                    <p className="text-[10px] font-bold uppercase mb-2">Error Loading Leaderboard</p>
-                    <p className="text-[9px]">{leaderboardError}</p>
-                  </div>
-                ) : leaderboardUsers.length > 0 ? (
-                  leaderboardUsers.map((u, idx) => (
-                    <div key={u.uid} className="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className={`text-[10px] font-black w-4 ${idx < 3 ? "text-purple-600 dark:text-purple-400" : "text-slate-400"}`}>
-                          {idx + 1}
-                        </span>
-                        <img 
-                          src={u.avatar || u.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"} 
-                          alt={u.name}
-                          className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-800"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
-                            {u.name || "Anonymous"}
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
-                            {u.githubUsername ? `@${u.githubUsername}` : "Developer"}
-                          </p>
+
+                {/* Algorithmic Catalog */}
+                <Card className="p-4 border-slate-200/50 dark:border-slate-800/50">
+                  <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0 mb-4">
+                    Featured Challenges
+                  </h4>
+                  <div className="space-y-3">
+                    {recentChallenges.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <Code2 className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate max-w-[100px]">{item.title}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-1.5 py-0.5 text-[8px] font-bold rounded-full border ${item.diffColor}`}>
+                            {item.difficulty[0]}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setCode(STARTER_CODE.javascript);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="text-[10px] font-bold text-violet-600 hover:underline cursor-pointer"
+                          >
+                            Solve
+                          </button>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[11px] font-black text-emerald-500">
-                          {u.points?.codingVersePoints?.toLocaleString() || 0}
-                        </p>
-                        <p className="text-[8px] text-slate-400 font-bold uppercase">XP</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center text-slate-400">
-                    <p className="text-[10px] font-bold uppercase">No data found</p>
+                    ))}
                   </div>
-                )}
-              </div>
-              <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-wider">
-                  Top 20 CodingVerse Engineers
+                </Card>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="leaderboard"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+              >
+                {/* CodingVerse Leaderboard Card (Issue #302) */}
+                <Card className="p-0 overflow-hidden border-purple-500/15">
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-purple-500/5 to-transparent">
+                    <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
+                      Global Standings
+                    </h4>
+                  </div>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/40 max-h-[440px] overflow-y-auto">
+                    {loadingLeaderboard ? (
+                      <div className="p-8 flex flex-col items-center justify-center gap-2 text-slate-400">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Loading...</span>
+                      </div>
+                    ) : leaderboardError ? (
+                      <div className="p-8 text-center text-red-500">
+                        <p className="text-[10px] font-bold uppercase mb-2">Error Loading Leaderboard</p>
+                        <p className="text-[9px]">{leaderboardError}</p>
+                      </div>
+                    ) : leaderboardUsers.length > 0 ? (
+                      leaderboardUsers.map((u, idx) => (
+                        <div key={u.uid} className="p-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[10px] font-black w-4 ${idx < 3 ? "text-purple-600 dark:text-purple-400" : "text-slate-400"}`}>
+                              {idx + 1}
+                            </span>
+                            <img 
+                              src={u.avatar || u.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"} 
+                              alt={u.name}
+                              className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-800"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
+                                {u.name || "Anonymous"}
+                              </p>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
+                                {u.githubUsername ? `@${u.githubUsername}` : "Developer"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[11px] font-black text-emerald-500">
+                              {u.points?.codingVersePoints?.toLocaleString() || 0}
+                            </p>
+                            <p className="text-[8px] text-slate-400 font-bold uppercase">XP</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-slate-400">
+                        <p className="text-[10px] font-bold uppercase">No data found</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+                    <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-wider">
+                      Top 20 CodingVerse Engineers
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Oliver Mascot Daily Tip Card */}
+          <Card className="p-5 border-slate-200/50 dark:border-slate-800/50 select-none bg-slate-50/20 dark:bg-slate-950/20">
+            <div className="flex items-start gap-3">
+              <div className="text-2xl mt-0.5">🦉</div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
+                  Oliver's Arena Pro-Tip
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
+                  Always inspect scope evaluation and reference comparisons closely! In Java, check cached values; in Python, track shared default argument references. Speed is nice, but precision builds streaks.
                 </p>
               </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </Card>
 
-      {/* Oliver Mascot Daily Tip Card */}
-      <Card className="p-5 border-slate-200/50 dark:border-slate-800/50 select-none bg-slate-50/20 dark:bg-slate-950/20">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl mt-0.5">🦉</div>
-          <div className="space-y-1">
-            <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider my-0">
-              Oliver's Arena Pro-Tip
-            </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
-              Always inspect scope evaluation and reference comparisons closely! In Java, check cached values; in Python, track shared default argument references. Speed is nice, but precision builds streaks.
-            </p>
-          </div>
         </div>
-      </Card>
-
       </div>
     </div>
-  </div>
   );
 };
 

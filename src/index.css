@@ -462,6 +462,7 @@
   width: 100%;
   padding: 10px 10px 60px !important; /* Extra bottom padding for pagination dots */
   overflow: hidden !important;
+  touch-action: pan-y;
 }
 
 .swiper-slide {

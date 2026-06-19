@@ -81,11 +81,11 @@ export const RankPreview = () => {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {/* Badge Icon */}
                   <div
-                    className={`w-10 h-10 rounded-lg bg-gradient-to-br ${badge.color} flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${
+                    className={`w-10 h-10 rounded-lg bg-gradient-to-br ${badge.color} flex items-center justify-center text-lg flex-shrink-0 ${
                       !info.unlocked ? "brightness-75 saturate-50" : ""
                     }`}
                   >
-                    {badge.name[0]}
+                    {badge.icon}
                   </div>
 
                   {/* Badge Info */}

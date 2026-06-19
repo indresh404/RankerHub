@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal } from "lucide-react";
-import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal, ShieldCheck } from "lucide-react";
+import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp, getCountFromServer } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { TableVirtuoso } from "react-virtuoso"; 
 import { db } from "../lib/firebase";
@@ -74,7 +74,50 @@ export const GitRank = () => {
   const [repos, setRepos] = useState([]);
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [chartRateLimitError, setChartRateLimitError] = useState("");
+  // Jump to My Rank
+const [myRank, setMyRank] = useState(null);
+const [rankLoading, setRankLoading] = useState(false);
+const [rankError, setRankError] = useState("");
+const myRowRef = useRef(null);
 
+const handleJumpToMyRank = async () => {
+  if (!user) return;
+  setRankLoading(true);
+  setRankError("");
+  setMyRank(null);
+  try {
+    const userPoints = activeTab === "referrals"
+      ? (userData?.points?.referralPoints ?? 0)
+      : (userData?.points?.gitRankPoints ?? 0);
+
+    if (userPoints === 0) {
+      setRankError("You haven't earned any points yet! Start contributing 🚀");
+      setRankLoading(false);
+      return;
+    }
+
+    const pointsField = activeTab === "referrals"
+      ? "points.referralPoints"
+      : "points.gitRankPoints";
+
+    const q = query(
+      collection(db, "users"),
+      where(pointsField, ">", userPoints)
+    );
+    const snapshot = await getCountFromServer(q);
+    const rank = snapshot.data().count + 1;
+    setMyRank(rank);
+
+    setTimeout(() => {
+      myRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  } catch (err) {
+    console.error(err);
+    setRankError("Could not fetch your rank. Please try again.");
+  } finally {
+    setRankLoading(false);
+  }
+};
   const languages = ["All", "TypeScript", "Rust", "Go", "Python", "Kotlin", "Ruby", "JavaScript"];
 
   // 1. Real-time Leaderboard Listener (Server-Side Filtered)
@@ -310,7 +353,7 @@ export const GitRank = () => {
     setSyncError("");
 
     try {
-      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
+      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername, userData.timezone);
       const userRef = doc(db, "users", user.uid);
 
       await runTransaction(db, async (transaction) => {
@@ -337,6 +380,7 @@ export const GitRank = () => {
           "githubStats.primaryLanguage": ghStats.primaryLanguage,
           "points.gitRankPoints": newGitRankPoints,
           "points.totalPoints": newTotalPoints,
+          "points.trustScore": ghStats.trustScore,
           "lastSync": serverTimestamp()
         });
       });
@@ -987,8 +1031,34 @@ export const GitRank = () => {
 
       {/* 3. Leaderboard Table / Search & Filters Controls */}
       <Card className="!p-3 sm:!p-6">
-        
+       
+      {/* Jump to My Rank - Issue #483 */}
+{user && (
+  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+    <button
+      onClick={handleJumpToMyRank}
+      disabled={rankLoading}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors shadow-md"
+    >
+      {rankLoading ? "⏳ Finding rank..." : "📍 My Rank"}
+    </button>
+
+    {myRank && (
+      <div className="px-4 py-2 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 text-violet-700 dark:text-violet-300 text-xs font-bold flex items-center gap-2">
+        🏅 You are ranked <span className="text-violet-600 dark:text-violet-400 font-black">#{myRank}</span> on the leaderboard
+      </div>
+    )}
+
+    {rankError && (
+      <div className="px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center gap-2">
+        ⚠️ {rankError}
+      </div>
+    )}
+  </div>
+)}
+      
         {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
+        
         <div className="flex items-center gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
           <button
             onClick={() => handleTabChange("gitrank")}
@@ -1076,7 +1146,17 @@ export const GitRank = () => {
               components={{
                 Table: (props) => <table {...props} className="w-full text-left mt-4 border-collapse min-w-[640px]" />,
                 TableHead: React.forwardRef((props, ref) => <thead {...props} ref={ref} />),
-                TableRow: (props) => <tr {...props} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors group" />,
+               TableRow: ({ item: u, ...props }) => (
+  <tr
+    {...props}
+    ref={user && u?.uid === user?.uid ? myRowRef : null}
+    className={`hover:bg-slate-50/50 dark:hover:bg-slate-900/20 transition-colors group ${
+      user && u?.uid === user?.uid && myRank
+        ? "bg-violet-50 dark:bg-violet-500/10 ring-2 ring-violet-400 ring-inset"
+        : ""
+    }`}
+  />
+),
                 TableBody: React.forwardRef((props, ref) => <tbody {...props} ref={ref} className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm" />),
               }}
               fixedHeaderContent={() => (
@@ -1091,6 +1171,7 @@ export const GitRank = () => {
                       <th className="py-3 px-2 sm:px-4 text-center">Commits</th>
                       <th className="py-3 px-2 sm:px-4 text-center">PRs</th>
                       <th className="py-3 px-2 sm:px-4 text-center">Reviews</th>
+                      <th className="py-3 px-2 sm:px-4 text-center">Trust</th>
                       <th className="py-3 px-2 sm:px-4 text-right">Git Points</th>
                     </>
                   ) : (
@@ -1131,6 +1212,22 @@ export const GitRank = () => {
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">{u.githubStats?.commits || 0}</td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-violet-600 dark:text-violet-400 text-xs sm:text-sm">{u.githubStats?.prs || 0}</td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-center font-bold text-pink-600 dark:text-pink-400 text-xs sm:text-sm">{u.githubStats?.reviews || 0}</td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-center">
+                        {(() => {
+                          const ts = u.points?.trustScore ?? null;
+                          if (ts === null) return <span className="text-[9px] font-bold text-slate-400">—</span>;
+                          let label, cls;
+                          if (ts >= 90) { label = `${ts} ✦`; cls = "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"; }
+                          else if (ts >= 70) { label = `${ts} ✔`; cls = "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20"; }
+                          else if (ts >= 50) { label = `${ts}`; cls = "text-slate-500 dark:text-slate-400 bg-slate-500/10 border-slate-500/20"; }
+                          else { label = `${ts} ⚠`; cls = "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20"; }
+                          return (
+                            <span className={`inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md border ${cls}`}>
+                              {label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-right font-black text-slate-900 dark:text-white text-xs sm:text-sm">{u.points?.gitRankPoints?.toLocaleString() || 0}</td>
                     </>
                   ) : (

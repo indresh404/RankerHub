@@ -113,6 +113,8 @@ export const Profile = () => {
   const [customCollege, setCustomCollege] = useState("");
   const [editError, setEditError] = useState("");
 
+  const [editLearningTags, setEditLearningTags] = useState([]);
+const [learningInput, setLearningInput] = useState("");
   const editDropdownRef = useRef(null);
   const profileCardRef = useRef(null);
 
@@ -160,6 +162,7 @@ export const Profile = () => {
     }
     
     setEditError("");
+    setEditLearningTags(userData?.learningTags || []);
     setIsEditModalOpen(true);
   };
 
@@ -234,17 +237,27 @@ export const Profile = () => {
         dob: editDob,
         city: finalCity,
         college: finalCollege,
+        learningTags: editLearningTags, 
         updatedAt: new Date().toISOString()
       };
 
       await updateDoc(userRef, updateData);
 
-      if (setUserData) {
-        setUserData(prev => ({
-          ...prev,
-          ...updateData
-        }));
-      }
+     if (setUserData) {
+  setUserData(prev => ({
+    ...prev,
+    ...updateData
+  }));
+}
+
+// Notify other tabs about avatar change
+if (updateData.avatar) {
+  localStorage.setItem("rh_avatar_updated", JSON.stringify({
+    uid: user.uid,
+    avatar: updateData.avatar,
+    ts: Date.now()
+  }));
+}
 
       setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile updated successfully!", type: "success" }]);
       setIsEditModalOpen(false);
@@ -293,6 +306,12 @@ export const Profile = () => {
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
         setRank(`#${currentRank}`);
+
+        // Save rank snapshot if it is the user's own profile
+        if (isOwnProfile && user?.uid) {
+          const { saveRankSnapshot } = await import("../services/rankHistoryService");
+          await saveRankSnapshot(user.uid, currentRank, userData.points.totalPoints, userData.timezone);
+        }
       } catch (err) {
         console.error("Error calculating dynamic rank:", err);
         setRank("#N/A");
@@ -300,7 +319,7 @@ export const Profile = () => {
     };
 
     fetchRank();
-  }, [userData]);
+  }, [userData, isOwnProfile, user]);
 
   // Fetch REAL Profile Heatmap Data for GitHub
   useEffect(() => {
@@ -1544,6 +1563,113 @@ export const Profile = () => {
 
       </div>
 
+      {/* Trust Score Scorecard */}
+      {(() => {
+        const trustScore = userData?.points?.trustScore ?? null;
+
+        // Tier derivation mirrors trustScoreService.getTrustTier
+        let tier = { label: "Not Synced", color: "text-slate-400", badgeBg: "bg-slate-500/10 border-slate-500/20", description: "Sync your GitHub data to calculate your Trust Score." };
+        if (trustScore !== null) {
+          if (trustScore >= 90) tier = { label: "High Trust", color: "text-emerald-500", badgeBg: "bg-emerald-500/10 border-emerald-500/20", description: "Outstanding contribution quality, active peer code reviews, and strong open-source presence." };
+          else if (trustScore >= 70) tier = { label: "Verified", color: "text-blue-500", badgeBg: "bg-blue-500/10 border-blue-500/20", description: "Consistent, legitimate activities across multiple public repositories with clear documentation." };
+          else if (trustScore >= 50) tier = { label: "Basic", color: "text-slate-500", badgeBg: "bg-slate-500/10 border-slate-500/20", description: "Initial ranking signal. Contributions are valid but concentrated in self-owned repositories." };
+          else tier = { label: "Low Trust", color: "text-amber-500", badgeBg: "bg-amber-500/10 border-amber-500/20", description: "Suspicious commit frequency, low-content messages, or repetitive commit triggers detected." };
+        }
+
+        const scoreSegments = [
+          { label: "PR Merge Rate", emoji: "🔀", positive: true, max: 15 },
+          { label: "Code Reviews", emoji: "🔍", positive: true, max: 10 },
+          { label: "External Contributions", emoji: "🌐", positive: true, max: 15 },
+          { label: "Community Appreciation", emoji: "⭐", positive: true, max: 10 },
+          { label: "Low-content Commits", emoji: "⚠️", positive: false, max: 15 },
+          { label: "Repeated Commits", emoji: "🔁", positive: false, max: 10 },
+          { label: "Activity Concentration", emoji: "🎯", positive: false, max: 5 }
+        ];
+
+        return (
+          <div className="mb-0">
+            <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-br from-violet-600/5 via-transparent to-blue-500/5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-violet-500" /> Developer Trust Score
+                  </h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                    Quality-based ranking signal — evaluates contribution impact, not just volume.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <span className={`block text-4xl font-black leading-none ${tier.color}`}>
+                      {trustScore !== null ? trustScore : "—"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">out of 100</span>
+                  </div>
+                  <span className={`px-3 py-1.5 rounded-lg border text-xs font-black ${tier.badgeBg} ${tier.color}`}>
+                    {tier.label}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">{tier.description}</p>
+
+                {/* Score bar: base (50) + positives fills left, deductions eat from right */}
+                <div className="mt-4">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1.5">
+                    <span>Score Composition</span>
+                    <span>{trustScore !== null ? `${trustScore}/100` : "—"}</span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden flex">
+                    {trustScore !== null && (
+                      <>
+                        {/* Filled portion */}
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${trustScore}%`,
+                            background: trustScore >= 90
+                              ? "linear-gradient(90deg,#10b981,#34d399)"
+                              : trustScore >= 70
+                              ? "linear-gradient(90deg,#3b82f6,#60a5fa)"
+                              : trustScore >= 50
+                              ? "linear-gradient(90deg,#6366f1,#818cf8)"
+                              : "linear-gradient(90deg,#f59e0b,#fbbf24)"
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Signal breakdown table */}
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
+                  {scoreSegments.map((seg, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 font-semibold text-slate-500">
+                        <span>{seg.emoji}</span>
+                        {seg.label}
+                      </span>
+                      <span className={`font-bold text-[10px] px-1.5 py-0.5 rounded ${
+                        seg.positive
+                          ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                          : "text-red-500 dark:text-red-400 bg-red-500/10"
+                      }`}>
+                        {seg.positive ? `+${seg.max} max` : `-${seg.max} max`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="mt-4 text-[10px] text-slate-400 font-semibold border-t border-slate-100 dark:border-slate-800 pt-3">
+                  Base score: 50 pts · Sync your GitHub data to refresh this score. Trust Score is an additional signal and does not replace GitRank points.
+                </p>
+              </div>
+            </Card>
+          </div>
+        );
+      })()}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <Card className="lg:col-span-2 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
@@ -1852,7 +1978,64 @@ export const Profile = () => {
                     )}
                   </AnimatePresence>
                 </div>
-
+                {/* Currently Learning */}
+<div className="space-y-1.5">
+  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+    Currently Learning
+  </label>
+  <div className="flex flex-wrap gap-2 mb-2">
+    {(editLearningTags || []).map((tag, index) => (
+      <span
+        key={index}
+        className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30"
+      >
+        {tag}
+        <button
+          type="button"
+          onClick={() => setEditLearningTags(prev => prev.filter((_, i) => i !== index))}
+          className="hover:text-red-400 transition-colors"
+        >
+          ×
+        </button>
+      </span>
+    ))}
+  </div>
+  {(editLearningTags || []).length < 5 && (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        placeholder="e.g. Rust, DSA, System Design"
+        value={learningInput}
+        onChange={(e) => setLearningInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const val = learningInput.trim();
+            if (val && !(editLearningTags || []).includes(val)) {
+              setEditLearningTags(prev => [...(prev || []), val]);
+              setLearningInput("");
+            }
+          }
+        }}
+        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500 text-white"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          const val = learningInput.trim();
+          if (val && !(editLearningTags || []).includes(val)) {
+            setEditLearningTags(prev => [...(prev || []), val]);
+            setLearningInput("");
+          }
+        }}
+        className="px-3 py-1 text-xs rounded-xl bg-violet-500 text-white hover:bg-violet-600 transition-colors"
+      >
+        Add
+      </button>
+    </div>
+  )}
+  <p className="text-[10px] text-slate-500">Add up to 5 tags (press Enter or click Add)</p>
+</div>
                 {/* Submit & Cancel Buttons */}
                 <div className="flex gap-3 pt-2">
                   <button

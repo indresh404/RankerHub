@@ -25,6 +25,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
+import { detectTimezone } from "../utils/streakCalculator";
 import Card from "../components/ui/Card";
 import GradientButton from "../components/ui/GradientButton";
 import collegesList from "../data/colleges.json";
@@ -233,7 +234,7 @@ export const Onboarding = () => {
 
       // 2. Fetch Verified GitHub Stats Snapshot
       setSuccessMsg("Snapshotting your GitHub contributions securely...");
-      const ghStats = await fetchGitHubStats(activeUid, githubUsername);
+      const ghStats = await fetchGitHubStats(activeUid, githubUsername, detectTimezone());
 
       setSuccessMsg("Validating referrals and locking account credentials...");
 
@@ -334,6 +335,7 @@ export const Onboarding = () => {
           referralCode: newReferralCode,
           referredBy: referrerUid ? referrerCodeClean : null,
           onboardingStatus: "complete",
+          timezone: detectTimezone(),
           streak: 1,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
