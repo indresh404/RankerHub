@@ -87,10 +87,16 @@ const OnboardingRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (userData?.onboardingStatus === "complete" || !isOnboarding || (userData && userData.onboardingStatus !== "incomplete")) {
+
+  // Guard: only redirect away from onboarding when the user's data explicitly
+  // confirms onboarding is complete, or when isOnboarding has resolved to false
+  // for a user with loaded data. We intentionally do NOT redirect when
+  // onboardingStatus is undefined (e.g. the user document is still being
+  // created), since that would incorrectly bounce new users away from
+  // /onboarding before they can complete it.
+  if (userData?.onboardingStatus === "complete" || (userData && !isOnboarding)) {
     return <Navigate to="/dashboard" replace />;
   }
-
   return children;
 };
 
