@@ -135,13 +135,13 @@ export const Friends = () => {
     return Array.from(networkMap.values()).sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
   }, [connections.followers, connections.following, currentUser, userData]);
 
-  const activeDevelopers = activeTab === "leaderboard" ? leaderboardStandings : connections[activeTab] || [];
   const filteredDevelopers = React.useMemo(() => {
+    const activeDevelopers = activeTab === "leaderboard" ? leaderboardStandings : connections[activeTab] || [];
     return activeDevelopers.filter(dev => {
       if (selectedCollege === "All") return true;
       return dev.college === selectedCollege;
     });
-  }, [activeDevelopers, selectedCollege]);
+  }, [activeTab, leaderboardStandings, connections, selectedCollege]);
   
   const tabCopy = {
     friends: "Developers who follow you back and collaborate with you across RankerHub.",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal, ShieldCheck } from "lucide-react";
+import { Search, Filter, Star, Trophy, RefreshCw, GitCommit, Calendar, BookOpen, AlertCircle, CheckCircle2, Users, Medal } from "lucide-react";
 import { collection, query, doc, where, orderBy, limit, startAfter, onSnapshot, getDocs, runTransaction, serverTimestamp, getCountFromServer } from "firebase/firestore";
 import { useSearchParams } from "react-router-dom";
 import { TableVirtuoso } from "react-virtuoso"; 

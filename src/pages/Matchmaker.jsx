@@ -160,7 +160,7 @@ export const Matchmaker = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedLanguage, selectedDifficulty, searchQuery, user, ghAccessToken]);
+  }, [selectedLanguage, selectedDifficulty, searchQuery, ghAccessToken]);
 
   // Load issues on initial component mounting
   useEffect(() => {

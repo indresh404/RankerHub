@@ -5,7 +5,7 @@ import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 import GlobalModals from "../components/ui/GlobalModals";
-import { Settings as SettingsIcon, Code, Award, Users, Target, BookOpen, Shield, Sparkles, Activity } from "lucide-react";
+import { Settings as SettingsIcon, Code, Award, Users, Target } from "lucide-react";
 
 // Lazy Loaded Pages to reduce initial JS bundle
 const Home = React.lazy(() => import("../pages/Home"));
@@ -174,31 +174,7 @@ const SettingsPage = () => (
   </div>
 );
 
-// Route configuration metadata (for documentation)
-const routeMetadata = {
-  public: [
-    { path: "/", name: "Home", icon: "🏠" },
-    { path: "/gitrank", name: "GitRank", icon: "📊" },
-    { path: "/rankher", name: "RankHer", icon: "👩‍💻" },
-    { path: "/codingverse", name: "CodingVerse", icon: "🌌" },
-    { path: "/codingowl", name: "CodingOwl", icon: "🦉" },
-    { path: "/repo-health", name: "Repo Health", icon: "💚" }
-  ],
-  legal: [
-    { path: "/about", name: "About", icon: "ℹ️" },
-    { path: "/terms", name: "Terms", icon: "📜" },
-    { path: "/privacy", name: "Privacy", icon: "🔒" }
-  ],
-  dashboard: [
-    { path: "/dashboard", name: "Dashboard", icon: "📊" },
-    { path: "/dashboard/gitrank", name: "GitRank", icon: "🏆" },
-    { path: "/dashboard/achievements", name: "Achievements", icon: "🎖️" },
-    { path: "/dashboard/codingowl", name: "CodingOwl", icon: "🦉" },
-    { path: "/dashboard/friends", name: "Friends", icon: "👥" },
-    { path: "/dashboard/profile", name: "Profile", icon: "👤" },
-    { path: "/dashboard/settings", name: "Settings", icon: "⚙️" }
-  ]
-};
+
 
 export const AppRoutes = () => {
   return (
