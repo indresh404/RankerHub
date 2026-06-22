@@ -279,12 +279,25 @@ export const Friends = () => {
           ) : (
             <Card className="p-8 text-center">
               <UsersRound className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-              <h3 className="font-black text-slate-900 dark:text-white my-0">No developers here yet</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {activeTab === "leaderboard"
+              <h3 className="font-black text-slate-900 dark:text-white my-0">
+                {activeTab === "friends" ? "No friends yet!" : "No developers here yet"}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-5">
+                {activeTab === "friends"
+                  ? "Follow other developers to grow your friend circle and see their activity here."
+                  : activeTab === "leaderboard"
                   ? "Follow other developers to populate your Friends Leaderboard."
                   : "Follow developers from suggestions to grow this section instantly."}
               </p>
+              {activeTab === "friends" && (
+                <Link
+                  to="/dashboard/friends/leaderboard"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-extrabold text-white bg-gradient-to-r from-violet-600 to-indigo-600 border border-violet-500 shadow-[0_4px_15px_rgba(124,58,237,0.25)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.35)] transition-all"
+                >
+                  <Trophy className="w-4 h-4" />
+                  Discover Developers
+                </Link>
+              )}
             </Card>
           )}
         </div>

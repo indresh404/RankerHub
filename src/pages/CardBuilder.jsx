@@ -25,10 +25,14 @@ const CardBuilder = () => {
   
   const markdownCode = `[![RankerHub Stats](${devcardUrl})](${baseUrl}/dashboard/profile/${githubUsername})`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(markdownCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(markdownCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (

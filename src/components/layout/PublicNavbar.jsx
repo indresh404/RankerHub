@@ -35,6 +35,16 @@ export const PublicNavbar = () => {
   const navRef = useRef(null);
   const glareRef = useRef(null);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mobileExpanded && navRef.current && !navRef.current.contains(event.target)) {
+        setMobileExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileExpanded]);
+
   // Function to update the pill position and width
   const updatePill = (index, smooth = true) => {
     const btn = buttonRefs.current[index];
