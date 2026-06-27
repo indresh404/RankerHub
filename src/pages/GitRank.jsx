@@ -786,6 +786,19 @@ export const GitRank = () => {
                       : "Sync Data"}
                 </GradientButton>
 
+                {cooldownSeconds > 0 && (
+                  <div className="w-full">
+                    <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-violet-500 rounded-full transition-all duration-1000"
+                        style={{ width: `${(cooldownSeconds / 300) * 100}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-medium text-center mt-1">
+                      Cooldown: {formatCooldown(cooldownSeconds)} remaining
+                    </p>
+                  </div>
+                )}
                 {userData?.lastSync && (
                   <span className="text-[10px] sm:text-xs text-slate-400 font-medium">
                     Last sync:{" "}
