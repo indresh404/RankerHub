@@ -170,7 +170,7 @@ sys.stderr = _stderr
 
       try {
         const py = await initPyodide();
-        
+
         await py.runPythonAsync(\`
 _stdout.seek(0)
 _stdout.truncate(0)
@@ -401,6 +401,13 @@ export const CodingVerse = () => {
 
   // Global Standings State (Issue #302)
   const [activeSidebarTab, setActiveSidebarTab] = useState("stats"); // "stats" | "leaderboard"
+  const [difficultyFilter, setDifficultyFilter] = useState(
+    () => localStorage.getItem("codingverse_difficulty") || "All"
+  );
+  useEffect(() => {
+    localStorage.setItem("codingverse_difficulty", difficultyFilter);
+  }, [difficultyFilter]);
+
   const [leaderboardUsers, setLeaderboardUsers] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState("");
@@ -1040,7 +1047,31 @@ export const CodingVerse = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-6xl mx-auto">
         {/* Left/Main Column: Instagram feed of posts */}
         <div className="lg:col-span-2 space-y-8">
-          {theoryQuestions.map((q) => {
+          {/* Difficulty Filter Bar (Issue #615) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {["All", "Easy", "Medium", "Hard"].map((level) => (
+              <button
+                key={level}
+                onClick={() => setDifficultyFilter(level)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  difficultyFilter === level
+                    ? level === "Easy"
+                      ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
+                      : level === "Medium"
+                      ? "bg-amber-500/15 text-amber-600 border-amber-500/30"
+                      : level === "Hard"
+                      ? "bg-red-500/15 text-red-600 border-red-500/30"
+                      : "bg-purple-500/15 text-purple-600 border-purple-500/30"
+                    : "bg-slate-100 dark:bg-slate-800/50 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+          {theoryQuestions
+          .filter((q) => difficultyFilter === "All" || q.difficulty === difficultyFilter)
+          .map((q) => {
             const isSolved = answeredQuestions.includes(q.id);
             const isAttempted = attemptedQuestions.includes(q.id);
             const isWrong = wrongAnswers[q.id] === true;
