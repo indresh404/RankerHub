@@ -72,7 +72,7 @@ RankerHub pulls your activity from across the internet and unifies it:
 
 All platform activity rolls up into one transparent score:
 
-```
+```text
 RankerHub Score =
 
   Open Source Score       ← GitHub activity
@@ -87,8 +87,9 @@ RankerHub Score =
 $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{Reviews} \times 10) + (\text{GitHub Streak} \times 10)$$
 
 **CodingVerse XP:**
+
 | Action | Points |
-|---|---|
+| --- | --- |
 | Easy Solve | +100 XP |
 | Medium Solve | +150 XP |
 | Hard Solve | +200 XP |
@@ -97,8 +98,9 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 | Successful Referral | +100 XP |
 
 **Hackathon & Course XP:**
+
 | Achievement | Points |
-|---|---|
+| --- | --- |
 | Hackathon Participated | +50 XP |
 | Hackathon Finalist | +150 XP |
 | Hackathon Winner | +300 XP |
@@ -127,7 +129,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 - Colleges are ranked by the combined RankerHub scores of all their students.
 - Massive engagement driver — compete for your institution.
 
-```
+```text
 🏆 College Rankings — Maharashtra
 1. VJTI Mumbai        — 84,200 pts
 2. COEP Pune          — 79,100 pts
@@ -171,7 +173,7 @@ $$\text{GitPoints} = (\text{Commits} \times 2) + (\text{PRs} \times 5) + (\text{
 
 Students self-report their achievements with proof:
 
-```
+```text
 User submits:
 → Hackathon name + platform (Unstop / Devfolio / Devpost)
 → Result: Participated / Finalist / Winner
@@ -212,7 +214,7 @@ Certificate stored permanently on your RankerHub profile as verified proof — m
 
 Auto-generated monthly summary shareable on LinkedIn / Twitter:
 
-```
+```text
 June 2026 — My Dev Stats
 🔨 23 commits across 4 repos
 🧩 31 LeetCode problems solved
