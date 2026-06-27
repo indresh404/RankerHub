@@ -52,12 +52,18 @@ export const GitRank = () => {
   // Active Tab for Referral Leaderboard (Issue #310) - Now synced with URL
   const activeTab = searchParams.get("tab") || "gitrank";
 
+  const [searchInput, setSearchInput] = useState(searchTerm);
+  const searchDebounceRef = useRef(null);
   const handleSearchChange = (e) => {
     const val = e.target.value;
-    const newParams = new URLSearchParams(searchParams);
-    if (val) newParams.set("search", val);
-    else newParams.delete("search");
-    setSearchParams(newParams, { replace: true });
+    setSearchInput(val);
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      const newParams = new URLSearchParams(searchParams);
+      if (val) newParams.set("search", val);
+      else newParams.delete("search");
+      setSearchParams(newParams, { replace: true });
+    }, 300);
   };
 
   const handleLanguageChange = (lang) => {
@@ -1261,8 +1267,8 @@ export const GitRank = () => {
               <input
                 type="text"
                 placeholder="Search user...  [ / ]"
-                ref={searchInputRef}
-                value={searchTerm}
+              ref={searchInputRef}
+                value={searchInput}
                 onChange={handleSearchChange}
                 className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
               />
