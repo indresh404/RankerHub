@@ -574,7 +574,6 @@ export const Profile = () => {
         document.body.appendChild(ta);
         ta.select();
         const success = document.execCommand('copy');
-        document.execCommand("copy");
         document.body.removeChild(ta);
         if (!success) throw new Error('execCommand copy failed');
       }
@@ -639,7 +638,7 @@ export const Profile = () => {
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        const success = document.execCommand('copy');
         document.body.removeChild(ta);
         if (!success) throw new Error('execCommand copy failed');
       }
@@ -681,7 +680,7 @@ export const Profile = () => {
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        const success = document.execCommand('copy');
         document.body.removeChild(ta);
         if (!success) throw new Error('execCommand copy failed');
       }
