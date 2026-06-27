@@ -144,6 +144,7 @@ export const Profile = () => {
   const [updating, setUpdating] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [badgeSort, setBadgeSort] = useState("Default");
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
@@ -2223,8 +2224,33 @@ export const Profile = () => {
             <Award className="w-5 h-5 text-violet-500" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-6">
-            {systemBadges.map((badge) => {
+          {/* Issue #617: Badge sort controls */}
+          {isOwnProfile && (
+            <div className="flex items-center gap-2 mt-4 mb-2 flex-wrap">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sort:</span>
+              {["Default", "Unlocked First", "Locked First"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setBadgeSort(opt)}
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                    badgeSort === opt
+                      ? "bg-violet-600 border-violet-600 text-white"
+                      : "border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+            {[...systemBadges].sort((a, b) => {
+              const aUnlocked = a.id === "b1" || (a.id === "b2" && gitRankPoints >= 100) || (a.id === "b3" && streak >= 10) || (a.id === "b4" && codingVersePoints >= 100) || (a.id === "b5" && referralPoints >= 1000);
+              const bUnlocked = b.id === "b1" || (b.id === "b2" && gitRankPoints >= 100) || (b.id === "b3" && streak >= 10) || (b.id === "b4" && codingVersePoints >= 100) || (b.id === "b5" && referralPoints >= 1000);
+              if (badgeSort === "Unlocked First") return aUnlocked === bUnlocked ? 0 : aUnlocked ? -1 : 1;
+              if (badgeSort === "Locked First") return aUnlocked === bUnlocked ? 0 : aUnlocked ? 1 : -1;
+              return 0;
+            }).map((badge) => {
               let unlocked = false;
               if (badge.id === "b1") unlocked = true;
               if (badge.id === "b2" && gitRankPoints >= 100) unlocked = true;
