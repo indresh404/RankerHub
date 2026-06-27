@@ -324,6 +324,7 @@ export const AppRoutes = () => {
               element={<CardBuilder />}
             />
             <Route path="/dashboard/profile/:username" element={<Profile />} />
+            <Route path="/dashboard/profile/:username/*" element={<Profile />} />
             <Route path="/dashboard/settings" element={<SettingsPage />} />
             <Route path="/dashboard/auditor" element={<Auditor />} />
             <Route path="/dashboard/repo-health" element={<RepoHealth />} />

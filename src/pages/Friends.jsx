@@ -362,16 +362,25 @@ export const Friends = () => {
               ))}
             </div>
           ) : (
-            <Card className="p-8 text-center">
+<Card className="p-8 text-center">
               <UsersRound className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
               <h3 className="font-black text-slate-900 dark:text-white my-0">
                 No developers here yet
               </h3>
+              <h3 className="font-black text-slate-900 dark:text-white my-0">No friends yet!</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 {activeTab === "leaderboard"
                   ? "Follow other developers to populate your Friends Leaderboard."
-                  : "Follow developers from suggestions to grow this section instantly."}
+                  : activeTab === "followers"
+                  ? "You don't have any followers yet. Share your profile to get noticed!"
+                  : "You're not following anyone yet. Discover developers to follow!"}
               </p>
+              <button
+                onClick={() => window.location.href = '/leaderboard'}
+                className="mt-4 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-lg transition-colors"
+              >
+                Discover Developers
+              </button>
             </Card>
           )}
         </div>
