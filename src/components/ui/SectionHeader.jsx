@@ -5,7 +5,7 @@ export const SectionHeader = ({
   subtitle,
   badge,
   badgeColor = "bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20",
-  children
+  children,
 }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -15,7 +15,9 @@ export const SectionHeader = ({
             {title}
           </h1>
           {badge && (
-            <span className={`px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full shrink-0 ${badgeColor}`}>
+            <span
+              className={`px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full shrink-0 ${badgeColor}`}
+            >
               {badge}
             </span>
           )}

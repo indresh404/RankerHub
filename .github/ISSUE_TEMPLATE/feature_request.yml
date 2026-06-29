@@ -1,7 +1,7 @@
 name: "💡 Feature Request"
 description: "Suggest a new feature or improvement for RankerHub"
 title: "[Feature]: "
-labels: ["enhancement", "gssoc26", "NSoC'26", "needs-triage"]
+labels: ["enhancement", "NSoC'26", "needs-triage"]
 body:
   - type: markdown
     attributes:

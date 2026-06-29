@@ -1,7 +1,7 @@
 name: "📚 Documentation Issue"
 description: "Suggest improvements, fixes, or new additions to documentation"
 title: "[Docs]: "
-labels: ["documentation", "gssoc26", "NSoC'26", "needs-triage"]
+labels: ["documentation", "NSoC'26", "needs-triage"]
 body:
   - type: markdown
     attributes:

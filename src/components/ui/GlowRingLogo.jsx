@@ -24,10 +24,10 @@ export const GlowRingLogo = ({ logoSrc, type = "logo", className = "" }) => {
           u_scale: 1.5,
           u_shape: 1.0,
           u_offsetX: 0.1,
-          u_offsetY: -0.1
+          u_offsetY: -0.1,
         },
         undefined,
-        0.6
+        0.6,
       );
     } catch (e) {
       console.error("Failed to initialize liquid metal WebGL shader:", e);
@@ -47,11 +47,11 @@ export const GlowRingLogo = ({ logoSrc, type = "logo", className = "" }) => {
   return (
     <div className={`metallic-ring-container group relative ${className}`}>
       {/* Container for the liquid metal shader canvas (rotates randomly on hover) */}
-      <div 
-        ref={containerRef} 
-        className="shader-canvas-wrapper absolute inset-0 w-full h-full z-10 rounded-full overflow-hidden transition-all duration-500 opacity-0 group-hover:opacity-100 pointer-events-none" 
+      <div
+        ref={containerRef}
+        className="shader-canvas-wrapper absolute inset-0 w-full h-full z-10 rounded-full overflow-hidden transition-all duration-500 opacity-0 group-hover:opacity-100 pointer-events-none"
       />
-      
+
       {/* Dark metallic backing disc */}
       <div className="metallic-inner-disc z-20">
         {type === "home" ? (
@@ -62,7 +62,13 @@ export const GlowRingLogo = ({ logoSrc, type = "logo", className = "" }) => {
             fill="url(#metallic-silver)"
           >
             <defs>
-              <linearGradient id="metallic-silver" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient
+                id="metallic-silver"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="#ffffff" />
                 <stop offset="25%" stopColor="#f0f0f0" />
                 <stop offset="50%" stopColor="#d2d2d2" />
@@ -81,7 +87,7 @@ export const GlowRingLogo = ({ logoSrc, type = "logo", className = "" }) => {
           />
         )}
       </div>
-      
+
       {/* Outer border highlighting */}
       <div className="metallic-outer-border z-30" />
     </div>

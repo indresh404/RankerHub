@@ -12,11 +12,11 @@ export const DashboardLayout = () => {
     isMobileOpen,
     toggleCollapse,
     toggleMobile,
-    closeMobile
+    closeMobile,
   } = useSidebar();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden flex">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 relative flex">
       {/* Background Premium Animated Blobs (optimized with radial gradients instead of expensive blur filters) */}
       <div className="absolute top-10 left-10 w-72 h-72 md:w-96 md:h-96 bg-blob-purple pointer-events-none animate-blob -z-10 transform-gpu" />
       <div className="absolute top-1/3 right-10 w-72 h-72 md:w-96 md:h-96 bg-blob-indigo pointer-events-none animate-blob [animation-delay:2s] -z-10 transform-gpu" />
@@ -43,6 +43,7 @@ export const DashboardLayout = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto"
+          style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
         >
           <Outlet />
         </motion.main>

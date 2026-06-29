@@ -1,5 +1,5 @@
 import React from "react";
-import {  } from "framer-motion";
+import {} from "framer-motion";
 import LottiePlayer from "./LottiePlayer";
 import hourglassAnimation from "../../assets/animations/hourglass_loading.json";
 import Card from "./Card";
@@ -10,9 +10,8 @@ export const ComingSoonCard = ({
   icon: Icon,
   features = [],
   estimatedArrival = "Q3 2026",
-  showHourglass = true
+  showHourglass = true,
 }) => {
-
   return (
     <Card className="relative overflow-hidden p-8 flex flex-col md:flex-row items-center justify-between gap-8 border-violet-500/20 dark:border-violet-500/10">
       {/* Background Gradient Orbs */}
@@ -26,11 +25,11 @@ export const ComingSoonCard = ({
             <span>Module Integration</span>
           </div>
         )}
-        
+
         <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white my-0">
           {title}
         </h2>
-        
+
         <p className="text-slate-500 dark:text-slate-400 max-w-lg text-sm md:text-base">
           {description}
         </p>
@@ -53,14 +52,21 @@ export const ComingSoonCard = ({
 
         <div className="pt-4 flex items-center gap-4">
           <div className="text-xs text-slate-400 dark:text-slate-500">
-            Estimated Release: <span className="font-semibold text-slate-700 dark:text-slate-300">{estimatedArrival}</span>
+            Estimated Release:{" "}
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              {estimatedArrival}
+            </span>
           </div>
         </div>
       </div>
 
       {showHourglass && (
         <div className="w-48 h-48 md:w-56 md:h-56 flex-shrink-0 flex items-center justify-center bg-slate-50 dark:bg-slate-950/40 rounded-2xl p-4 border border-slate-200/40 dark:border-slate-800/40">
-          <LottiePlayer animationData={hourglassAnimation} loop={true} className="w-full h-full" />
+          <LottiePlayer
+            animationData={hourglassAnimation}
+            loop={true}
+            className="w-full h-full"
+          />
         </div>
       )}
     </Card>

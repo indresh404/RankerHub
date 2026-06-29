@@ -11,6 +11,14 @@
         {
           "fieldPath": "points.gitRankPoints",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubStats.commits",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubUsername",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -29,6 +37,14 @@
         {
           "fieldPath": "points.gitRankPoints",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubStats.commits",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "githubUsername",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -60,6 +76,24 @@
         },
         {
           "fieldPath": "points.codingVersePoints",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "onboardingStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "college",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "points.totalPoints",
           "order": "DESCENDING"
         }
       ]

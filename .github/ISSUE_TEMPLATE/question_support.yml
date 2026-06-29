@@ -1,7 +1,7 @@
 name: "❓ Question or Support"
 description: "Ask a question, troubleshoot an issue, or get support"
 title: "[Question]: "
-labels: ["help wanted", "gssoc26", "NSoC'26", "needs-triage"]
+labels: ["help wanted", "NSoC'26", "needs-triage"]
 body:
   - type: markdown
     attributes:

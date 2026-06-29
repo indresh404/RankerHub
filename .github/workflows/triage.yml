@@ -31,8 +31,8 @@ jobs:
             console.log(`Processing ${isPR ? 'PR' : 'Issue'} #${number} by ${author}`);
 
             // 1. Determine labels to apply
-            // Apply all GSSoC and NSoC related labels
-            const labelsToApply = new Set(['gssoc26', "NSoC'26", 'gssoc', 'nsoc']);
+            // Apply all NSoC related labels
+            const labelsToApply = new Set(["NSoC'26", 'nsoc']);
 
             // Add status labels
             if (isPR) {

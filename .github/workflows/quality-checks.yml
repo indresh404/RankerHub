@@ -2,7 +2,7 @@ name: Quality & Formatting Checks
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
   issues:
     types: [opened]
@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci

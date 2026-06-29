@@ -12,7 +12,7 @@ import {
   Search,
   Sparkles,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 import { Linkedin, Instagram } from "../components/ui/Icons";
 import {
@@ -21,10 +21,11 @@ import {
   query,
   where,
   getDocs,
-  runTransaction
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
+import { detectTimezone } from "../utils/streakCalculator";
 import Card from "../components/ui/Card";
 import GradientButton from "../components/ui/GradientButton";
 import collegesList from "../data/colleges.json";
@@ -41,7 +42,7 @@ export const Onboarding = () => {
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [city, setCity] = useState("");
-  
+
   // Searchable college dropdown state
   const [collegeSearch, setCollegeSearch] = useState("");
   const [selectedCollege, setSelectedCollege] = useState("");
@@ -53,15 +54,19 @@ export const Onboarding = () => {
     }
 
     const searchLower = collegeSearch.toLowerCase();
-    return collegesList.filter((col) => col.toLowerCase().includes(searchLower));
+    return collegesList.filter((col) =>
+      col.toLowerCase().includes(searchLower),
+    );
   }, [collegeSearch]);
 
   const [referralCode, setReferralCode] = useState(() =>
-    typeof sessionStorage === "undefined" ? "" : sessionStorage.getItem("referred_by_code") || ""
+    typeof sessionStorage === "undefined"
+      ? ""
+      : sessionStorage.getItem("referred_by_code") || "",
   );
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
-  
+
   // UX State
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -109,6 +114,29 @@ export const Onboarding = () => {
     }
   };
 
+  const handleCollegeBlur = () => {
+    if (!collegeSearch.trim()) {
+      return;
+    }
+    const exactMatch = collegesList.find(
+      (c) => c.toLowerCase() === collegeSearch.trim().toLowerCase(),
+    );
+
+    if (exactMatch) {
+      setSelectedCollege(exactMatch);
+      setCollegeSearch(exactMatch);
+      if (exactMatch !== "Other") {
+        setCustomCollege("");
+      }
+    } else {
+      setSelectedCollege("Other");
+      if (collegeSearch.trim().toLowerCase() !== "other") {
+        setCustomCollege(collegeSearch.trim());
+      }
+      setCollegeSearch("Other");
+    }
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -150,13 +178,36 @@ export const Onboarding = () => {
       setIsLoading(false);
       return;
     }
-    if (!selectedCollege || !collegesList.includes(selectedCollege)) {
-      setError("Please select a college from the searchable dropdown list.");
+
+    // Normalizing college selection if user typed without selecting
+    let finalSelectedCollege = selectedCollege;
+    let finalCustomCollege = customCollege;
+
+    if (collegeSearch.trim() && collegeSearch !== selectedCollege) {
+      const exactMatch = collegesList.find(
+        (c) => c.toLowerCase() === collegeSearch.trim().toLowerCase(),
+      );
+      if (exactMatch) {
+        finalSelectedCollege = exactMatch;
+        if (exactMatch !== "Other") finalCustomCollege = "";
+      } else {
+        finalSelectedCollege = "Other";
+        finalCustomCollege = collegeSearch.trim();
+      }
+      setSelectedCollege(finalSelectedCollege);
+      setCollegeSearch(finalSelectedCollege);
+      setCustomCollege(finalCustomCollege);
+    }
+
+    if (!finalSelectedCollege || !collegesList.includes(finalSelectedCollege)) {
+      setError(
+        "Please select a valid college from the searchable dropdown list.",
+      );
       setIsLoading(false);
       return;
     }
 
-    if (selectedCollege === "Other" && !customCollege.trim()) {
+    if (finalSelectedCollege === "Other" && !finalCustomCollege.trim()) {
       setError("Please specify your college name.");
       setIsLoading(false);
       return;
@@ -164,10 +215,17 @@ export const Onboarding = () => {
 
     if (linkedinUrl.trim()) {
       const normalizedLinkedin = linkedinUrl.trim().toLowerCase();
-      const validPrefixes = ["https://linkedin.com/in/", "https://www.linkedin.com/in/"];
-      const isValidLinkedin = validPrefixes.some((prefix) => normalizedLinkedin.startsWith(prefix));
+      const validPrefixes = [
+        "https://linkedin.com/in/",
+        "https://www.linkedin.com/in/",
+      ];
+      const isValidLinkedin = validPrefixes.some((prefix) =>
+        normalizedLinkedin.startsWith(prefix),
+      );
       if (!isValidLinkedin) {
-        setError("LinkedIn URL must start with https://linkedin.com/in/ or https://www.linkedin.com/in/");
+        setError(
+          "LinkedIn URL must start with https://linkedin.com/in/ or https://www.linkedin.com/in/",
+        );
         setIsLoading(false);
         return;
       }
@@ -181,26 +239,39 @@ export const Onboarding = () => {
 
     try {
       const activeUid = user.uid;
-      const githubUsername = (userData?.githubUsername || user.reloadUserInfo?.screenName || "").trim();
+      const githubUsername = (
+        userData?.githubUsername ||
+        user.reloadUserInfo?.screenName ||
+        ""
+      ).trim();
 
       if (!githubUsername) {
-        throw new Error("Unable to identify your GitHub username from this session. Please log in again.");
+        throw new Error(
+          "Unable to identify your GitHub username from this session. Please log in again.",
+        );
       }
 
       // 2. Fetch Verified GitHub Stats Snapshot
       setSuccessMsg("Snapshotting your GitHub contributions securely...");
-      const ghStats = await fetchGitHubStats(activeUid, githubUsername);
+      const ghStats = await fetchGitHubStats(
+        activeUid,
+        githubUsername,
+        detectTimezone(),
+      );
 
       setSuccessMsg("Validating referrals and locking account credentials...");
 
       // Generate unique referral code for this user
       let newReferralCode = generateReferralCode();
-      
+
       // Ensure the generated code is unique by checking existing ones
       let codeUnique = false;
       let attempts = 0;
       while (!codeUnique && attempts < 10) {
-        const uniqueQuery = query(collection(db, "users"), where("referralCode", "==", newReferralCode));
+        const uniqueQuery = query(
+          collection(db, "users"),
+          where("referralCode", "==", newReferralCode),
+        );
         const uniqueSnap = await getDocs(uniqueQuery);
         if (uniqueSnap.empty) {
           codeUnique = true;
@@ -211,7 +282,9 @@ export const Onboarding = () => {
       }
 
       if (!codeUnique) {
-        setError("Could not generate a unique referral code after multiple attempts. Please try again.");
+        setError(
+          "Could not generate a unique referral code after multiple attempts. Please try again.",
+        );
         setIsLoading(false);
         return;
       }
@@ -222,11 +295,16 @@ export const Onboarding = () => {
 
       // If a referral code is entered, verify it
       if (referrerCodeClean) {
-        const refQuery = query(collection(db, "users"), where("referralCode", "==", referrerCodeClean));
+        const refQuery = query(
+          collection(db, "users"),
+          where("referralCode", "==", referrerCodeClean),
+        );
         const refSnap = await getDocs(refQuery);
-        
+
         if (refSnap.empty) {
-          setError("The referral code you entered is invalid. Please double-check or leave it blank.");
+          setError(
+            "The referral code you entered is invalid. Please double-check or leave it blank.",
+          );
           setIsLoading(false);
           return;
         }
@@ -256,13 +334,20 @@ export const Onboarding = () => {
         // user can retry with a new code.
         const myExistingUserDoc = await transaction.get(myUserRef);
         if (myExistingUserDoc.exists()) {
-          throw new Error("Your account has already been set up. Please log in.");
+          throw new Error(
+            "Your account has already been set up. Please log in.",
+          );
         }
 
-        const existingCodeQuery = query(collection(db, "users"), where("referralCode", "==", newReferralCode));
+        const existingCodeQuery = query(
+          collection(db, "users"),
+          where("referralCode", "==", newReferralCode),
+        );
         const existingCodeSnap = await getDocs(existingCodeQuery);
         if (!existingCodeSnap.empty) {
-          throw new Error("Referral code collision detected. Please try onboarding again.");
+          throw new Error(
+            "Referral code collision detected. Please try onboarding again.",
+          );
         }
 
         // Determine starting points
@@ -284,12 +369,16 @@ export const Onboarding = () => {
           gender,
           dob,
           city: city.trim(),
-          college: selectedCollege === "Other" ? customCollege.trim() : selectedCollege,
+          college:
+            finalSelectedCollege === "Other"
+              ? finalCustomCollege.trim()
+              : finalSelectedCollege,
           linkedinUrl: linkedinUrl.trim() || "",
           instagramHandle: instagramHandle.trim().replace(/^@/, "") || "",
           referralCode: newReferralCode,
           referredBy: referrerUid ? referrerCodeClean : null,
           onboardingStatus: "complete",
+          timezone: detectTimezone(),
           streak: 1,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -300,15 +389,15 @@ export const Onboarding = () => {
             repos: ghStats.publicRepos,
             stars: ghStats.stars,
             followers: ghStats.followers,
-            primaryLanguage: ghStats.primaryLanguage
+            primaryLanguage: ghStats.primaryLanguage,
           },
           points: {
             gitRankPoints: ghStats.gitRankPoints,
             codingVersePoints: 0,
             streakPoints: 0,
             referralPoints: initialReferralPoints,
-            totalPoints: totalPoints
-          }
+            totalPoints: totalPoints,
+          },
         };
 
         // If referred, update the Referrer's data
@@ -320,24 +409,27 @@ export const Onboarding = () => {
           const referrerIndexSnap = await transaction.get(referrerIndexRef);
 
           if (referrerDocSnap.exists()) {
-            const currentRefPoints = referrerDocSnap.data().points?.referralPoints || 0;
-            const currentTotalPoints = referrerDocSnap.data().points?.totalPoints || 0;
+            const currentRefPoints =
+              referrerDocSnap.data().points?.referralPoints || 0;
+            const currentTotalPoints =
+              referrerDocSnap.data().points?.totalPoints || 0;
 
             // Increment points for referrer (+100 points)
             transaction.update(referrerUserRef, {
               "points.referralPoints": currentRefPoints + 100,
-              "points.totalPoints": currentTotalPoints + 100
+              "points.totalPoints": currentTotalPoints + 100,
             });
           }
 
           if (referrerIndexSnap.exists()) {
             const currentUsedBy = referrerIndexSnap.data().usedBy || [];
-            const currentTotalEarned = referrerIndexSnap.data().totalEarned || 0;
+            const currentTotalEarned =
+              referrerIndexSnap.data().totalEarned || 0;
 
             // Append referred user and increment logged total
             transaction.update(referrerIndexRef, {
               usedBy: [...currentUsedBy, activeUid],
-              totalEarned: currentTotalEarned + 100
+              totalEarned: currentTotalEarned + 100,
             });
           } else {
             // Only create fallback if referrer user doc exists to prevent orphaned records
@@ -345,11 +437,13 @@ export const Onboarding = () => {
               transaction.set(referrerIndexRef, {
                 referralCode: referrerCodeClean,
                 usedBy: [activeUid],
-                totalEarned: 100
+                totalEarned: 100,
               });
             } else {
               // Referrer user no longer exists, fail the transaction
-              throw new Error("Referrer user not found, unable to process referral");
+              throw new Error(
+                "Referrer user not found, unable to process referral",
+              );
             }
           }
         }
@@ -361,7 +455,7 @@ export const Onboarding = () => {
         transaction.set(myReferralRef, {
           referralCode: newReferralCode,
           usedBy: [],
-          totalEarned: 0
+          totalEarned: 0,
         });
       });
 
@@ -369,21 +463,21 @@ export const Onboarding = () => {
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);
-
     } catch (err) {
       console.error("Onboarding transaction failed:", err);
-      setError(err.message || "An error occurred during onboarding. Please try again.");
+      setError(
+        err.message || "An error occurred during onboarding. Please try again.",
+      );
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/20 to-blue-50/20 dark:from-[#090D1A] dark:via-[#0A0F26] dark:to-[#0B122C] text-slate-900 dark:text-slate-100 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
-      
       {/* Dynamic Background Blobs */}
       <div className="absolute top-[-25%] left-[-15%] w-[70vw] h-[70vw] bg-gradient-to-br from-violet-500/10 to-indigo-500/10 pointer-events-none rounded-full blur-3xl" />
       <div className="absolute bottom-[-25%] right-[-15%] w-[70vw] h-[70vw] bg-gradient-to-tl from-blue-500/10 to-cyan-500/10 pointer-events-none rounded-full blur-3xl" />
-      
+
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000003_1px,transparent_1px),linear-gradient(to_bottom,#00000003_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
       <motion.div
@@ -393,7 +487,6 @@ export const Onboarding = () => {
         className="w-full max-w-xl relative z-10"
       >
         <Card className="backdrop-blur-xl bg-white/90 dark:bg-slate-950/40 border border-white/50 dark:border-slate-800/40 shadow-2xl p-8 space-y-6">
-          
           {/* Header */}
           <div className="text-center space-y-3 relative">
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30">
@@ -410,7 +503,6 @@ export const Onboarding = () => {
 
           {/* Form */}
           <form onSubmit={handleFormSubmit} className="space-y-5">
-            
             {/* Status Messages */}
             <AnimatePresence>
               {error && (
@@ -440,7 +532,6 @@ export const Onboarding = () => {
 
             {/* Grid for Name & Gender */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
               {/* Full Name */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -468,19 +559,30 @@ export const Onboarding = () => {
                   onChange={(e) => setGender(e.target.value)}
                   className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
                 >
-                  <option value="" disabled className="dark:bg-slate-950">Select gender</option>
-                  <option value="male" className="dark:bg-slate-950">Male</option>
-                  <option value="female" className="dark:bg-slate-950">Female</option>
-                  <option value="non-binary" className="dark:bg-slate-950">Non-Binary</option>
-                  <option value="prefer-not-to-say" className="dark:bg-slate-950">Prefer not to say</option>
+                  <option value="" disabled className="dark:bg-slate-950">
+                    Select gender
+                  </option>
+                  <option value="male" className="dark:bg-slate-950">
+                    Male
+                  </option>
+                  <option value="female" className="dark:bg-slate-950">
+                    Female
+                  </option>
+                  <option value="non-binary" className="dark:bg-slate-950">
+                    Non-Binary
+                  </option>
+                  <option
+                    value="prefer-not-to-say"
+                    className="dark:bg-slate-950"
+                  >
+                    Prefer not to say
+                  </option>
                 </select>
               </div>
-
             </div>
 
             {/* Grid for DOB & City */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
               {/* Date of Birth */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -508,15 +610,15 @@ export const Onboarding = () => {
                   className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all placeholder:text-slate-400"
                 />
               </div>
-
             </div>
 
             {/* Searchable College Dropdown */}
             <div className="space-y-2 relative" ref={dropdownRef}>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Building2 className="w-3.5 h-3.5" /> Mumbai College (Searchable Select)
+                <Building2 className="w-3.5 h-3.5" /> Mumbai College (Searchable
+                Select)
               </label>
-              
+
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
@@ -524,6 +626,7 @@ export const Onboarding = () => {
                   placeholder="Type to filter Mumbai colleges..."
                   value={collegeSearch}
                   onFocus={() => setShowCollegeDropdown(true)}
+                  onBlur={handleCollegeBlur}
                   onChange={(e) => {
                     setCollegeSearch(e.target.value);
                     setShowCollegeDropdown(true);
@@ -549,7 +652,10 @@ export const Onboarding = () => {
                       filteredColleges.map((col) => (
                         <div
                           key={col}
-                          onClick={() => handleSelectCollege(col)}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectCollege(col);
+                          }}
                           className="px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer font-medium transition-colors"
                         >
                           {col}
@@ -590,7 +696,6 @@ export const Onboarding = () => {
 
             {/* Social Links (Optional) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
               {/* LinkedIn URL */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -618,7 +723,6 @@ export const Onboarding = () => {
                   className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all placeholder:text-slate-400"
                 />
               </div>
-
             </div>
 
             {/* Optional Referral Code */}
@@ -669,9 +773,7 @@ export const Onboarding = () => {
                 )}
               </GradientButton>
             </div>
-
           </form>
-
         </Card>
       </motion.div>
     </div>

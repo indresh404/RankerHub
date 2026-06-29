@@ -25,11 +25,21 @@ export class ErrorBoundary extends Component {
               <div className="absolute inset-0 bg-violet-500/10 dark:bg-violet-500/5 rounded-full blur-xl animate-pulse" />
               <div className="absolute w-32 h-32 border border-violet-500/20 dark:border-violet-500/10 rounded-full animate-ping [animation-duration:3s]" />
               <div className="absolute w-28 h-28 border border-indigo-500/30 dark:border-indigo-500/15 rounded-full animate-pulse" />
-              
+
               {/* Main SVG Icon Container */}
               <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <svg className="w-12 h-12 text-white animate-bounce [animation-duration:2.5s]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="w-12 h-12 text-white animate-bounce [animation-duration:2.5s]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
               </div>
             </div>
@@ -37,7 +47,8 @@ export class ErrorBoundary extends Component {
               Something went wrong.
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">
-              The application encountered an unexpected error. Don't worry, your data is safe.
+              The application encountered an unexpected error. Don't worry, your
+              data is safe.
             </p>
             <button
               onClick={() => window.location.reload()}

@@ -2,7 +2,7 @@
 
 First off, thank you for taking the time to contribute! Contributions make the open-source community an amazing place to learn, inspire, and create. Any contribution you make to RankerHub is **greatly appreciated**.
 
-This project is part of open-source programs like **GSSoC (GirlScript Summer of Code) 2026** and **NSoC 2026**. Please follow the guidelines below to ensure a smooth contribution process.
+This project is part of open-source programs like **NSoC 2026** (Nexus Summer of Code). Please follow the guidelines below to ensure a smooth contribution process.
 
 ---
 
@@ -15,11 +15,14 @@ Please maintain a respectful, welcoming, and inclusive environment. Be helpful t
 ## Getting Started
 
 ### 1. Prerequisites
+
 Ensure you have the following installed on your local machine:
+
 - [Node.js](https://nodejs.org/) (v20.0.0 or higher recommended)
 - [Git](https://git-scm.com/)
 
 ### 2. Fork & Clone
+
 1. Fork the [RankerHub Repository](https://github.com/indresh404/RankerHub) to your own GitHub account.
 2. Clone your fork locally:
    ```bash
@@ -28,12 +31,15 @@ Ensure you have the following installed on your local machine:
    ```
 
 ### 3. Install Dependencies
+
 Run the following command to install the project dependencies:
+
 ```bash
 npm install
 ```
 
 ### 4. Setup Environment Variables
+
 1. Copy the `.env.example` file to create a `.env` file in the root directory:
    ```bash
    cp .env.example .env
@@ -41,10 +47,13 @@ npm install
 2. Open the `.env` file and fill in your Firebase configuration keys (see the [Firebase Setup](#firebase-setup) below).
 
 ### 5. Run the Project
+
 Start the local development server:
+
 ```bash
 npm run dev
 ```
+
 The application will be running locally at `http://localhost:5173`.
 
 ---
@@ -52,6 +61,7 @@ The application will be running locally at `http://localhost:5173`.
 ## Firebase Setup
 
 To get your own Firebase credentials for local development:
+
 1. Go to the [Firebase Console](https://console.firebase.google.com/).
 2. Create a new Firebase project (e.g., `rankerhub-dev`).
 3. Add a **Web App** to your project.
@@ -144,7 +154,9 @@ Open `http://localhost:5173`. New test users and Firestore documents created whi
 To keep the repository history clean, please follow these branching and commit message conventions:
 
 ### Branch Naming
+
 Create a new branch from `main` before starting your work:
+
 - `feat/feature-name` – for new features
 - `fix/bug-name` – for bug fixes
 - `docs/doc-updates` – for documentation changes
@@ -152,12 +164,15 @@ Create a new branch from `main` before starting your work:
 - `chore/task-name` – for maintenance tasks or package upgrades
 
 Example:
+
 ```bash
 git checkout -b feat/user-leaderboard
 ```
 
 ### Commit Messages (Semantic Commits)
+
 Write clear and descriptive commit messages following the semantic commit pattern:
+
 - `feat: add female developer ranking page`
 - `fix: resolve auth validation issue`
 - `docs: update setup steps in README`
@@ -166,7 +181,7 @@ Write clear and descriptive commit messages following the semantic commit patter
 
 ---
 
-## How to Contribute (GSSoC / NSoC Rules)
+## How to Contribute (NSoC Rules)
 
 1. **Find an Issue**: Search the [Issues](https://github.com/indresh404/RankerHub/issues) tab for open issues.
 2. **Request Assignment**: Comment on the issue stating that you'd like to work on it. Wait for a project maintainer to assign it to you before starting work.

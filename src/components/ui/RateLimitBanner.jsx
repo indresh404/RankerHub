@@ -1,6 +1,6 @@
-import React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
-import { useRateLimit } from '../../context/rateLimitContextValue';
+import React from "react";
+import { AlertTriangle, X } from "lucide-react";
+import { useRateLimit } from "../../context/rateLimitContextValue";
 
 const RateLimitBanner = () => {
   const { isRateLimited, resetRateLimit } = useRateLimit();
@@ -12,7 +12,8 @@ const RateLimitBanner = () => {
       <div className="flex items-center gap-3 max-w-7xl mx-auto w-full px-4">
         <AlertTriangle size={20} className="shrink-0" />
         <p className="text-sm md:text-base font-medium">
-          GitHub API rate limit exceeded! Please wait a while or authenticate to continue tracking stats.
+          GitHub API rate limit exceeded! Please wait a while or authenticate to
+          continue tracking stats.
         </p>
       </div>
       <button

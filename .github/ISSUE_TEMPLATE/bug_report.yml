@@ -1,7 +1,7 @@
 name: "🐛 Bug Report"
 description: "Report a bug to help us improve RankerHub"
 title: "[Bug]: "
-labels: ["bug", "gssoc26", "NSoC'26", "needs-triage"]
+labels: ["bug", "NSoC'26", "needs-triage"]
 body:
   - type: markdown
     attributes:

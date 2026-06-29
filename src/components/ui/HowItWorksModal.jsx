@@ -1,6 +1,14 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Link2, GitPullRequest, Terminal, Flame, Trophy, X, CheckCircle2 } from "lucide-react";
+import {
+  Link2,
+  GitPullRequest,
+  Terminal,
+  Flame,
+  Trophy,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 import Card from "./Card";
 
 export const HowItWorksModal = ({ onClose }) => {
@@ -13,10 +21,10 @@ export const HowItWorksModal = ({ onClose }) => {
         "OAuth login with read-only public scope",
         "Initial GitRank score calculated on onboarding",
         "Optional: enable private repo sync for full stats",
-        "Referral bonus: +50 XP for new user, +100 XP for referrer"
+        "Referral bonus: +50 XP for new user, +100 XP for referrer",
       ],
       icon: Link2,
-      color: "from-blue-600 to-cyan-500 text-blue-400"
+      color: "from-blue-600 to-cyan-500 text-blue-400",
     },
     {
       num: "02",
@@ -26,10 +34,10 @@ export const HowItWorksModal = ({ onClose }) => {
         "Commits: +2 XP each",
         "Pull Requests opened: +5 XP each",
         "Code Reviews submitted: +10 XP each",
-        "Manual sync available with a 5-minute cooldown"
+        "Manual sync available with a 5-minute cooldown",
       ],
       icon: GitPullRequest,
-      color: "from-violet-600 to-indigo-500 text-violet-400"
+      color: "from-violet-600 to-indigo-500 text-violet-400",
     },
     {
       num: "03",
@@ -40,10 +48,10 @@ export const HowItWorksModal = ({ onClose }) => {
         "Medium problems: +150 XP",
         "Hard problems: +200 XP",
         "15 total questions, one attempt per question",
-        "CodingVerse rank calculated from Firestore standings"
+        "CodingVerse rank calculated from Firestore standings",
       ],
       icon: Terminal,
-      color: "from-purple-600 to-pink-500 text-purple-400"
+      color: "from-purple-600 to-pink-500 text-purple-400",
     },
     {
       num: "04",
@@ -53,10 +61,10 @@ export const HowItWorksModal = ({ onClose }) => {
         "Consecutive daily login: +10 Streak XP / day",
         "Streak resets to 1 after missing a day",
         "Accumulated streak points are never lost",
-        "Reach 10-day streak to unlock the Consistency badge"
+        "Reach 10-day streak to unlock the Consistency badge",
       ],
       icon: Flame,
-      color: "from-orange-600 to-red-500 text-orange-400"
+      color: "from-orange-600 to-red-500 text-orange-400",
     },
     {
       num: "05",
@@ -66,11 +74,11 @@ export const HowItWorksModal = ({ onClose }) => {
         "Total XP = GitRank + CodingVerse + Streak + Referral",
         "Global rank: count of users above you + 1",
         "Language-specific and RankHer specialty leaderboards",
-        "Unlock badges at 100+ GitRank, 10-day streak, 100+ CodingVerse XP"
+        "Unlock badges at 100+ GitRank, 10-day streak, 100+ CodingVerse XP",
       ],
       icon: Trophy,
-      color: "from-amber-600 to-yellow-500 text-amber-400"
-    }
+      color: "from-amber-600 to-yellow-500 text-amber-400",
+    },
   ];
 
   return (
@@ -108,7 +116,8 @@ export const HowItWorksModal = ({ onClose }) => {
             How RankerHub Works
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 font-medium my-0">
-            Follow these steps to synchronize your metrics, conquer challenges, and unlock verified achievements.
+            Follow these steps to synchronize your metrics, conquer challenges,
+            and unlock verified achievements.
           </p>
         </div>
 
@@ -119,7 +128,9 @@ export const HowItWorksModal = ({ onClose }) => {
             return (
               <div key={idx} className="relative group">
                 {/* Timeline Node (Icon Wrapper) */}
-                <div className={`absolute -left-[45px] md:-left-[53px] top-0 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg shadow-indigo-500/5 group-hover:scale-105 transition-transform duration-300`}>
+                <div
+                  className={`absolute -left-[45px] md:-left-[53px] top-0 w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg shadow-indigo-500/5 group-hover:scale-105 transition-transform duration-300`}
+                >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
 
@@ -132,7 +143,7 @@ export const HowItWorksModal = ({ onClose }) => {
                       {step.title}
                     </h3>
                   </div>
-                  
+
                   {/* Detailed Description */}
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-semibold max-w-2xl my-0">
                     {step.desc}
@@ -142,7 +153,10 @@ export const HowItWorksModal = ({ onClose }) => {
                   {step.details && (
                     <ul className="mt-2 space-y-1 list-none p-0 m-0">
                       {step.details.map((detail, dIdx) => (
-                        <li key={dIdx} className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        <li
+                          key={dIdx}
+                          className="flex items-start gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium"
+                        >
                           <span className="mt-1 w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />
                           <span>{detail}</span>
                         </li>
@@ -159,7 +173,8 @@ export const HowItWorksModal = ({ onClose }) => {
         <Card className="p-4 bg-gradient-to-r from-violet-100 to-indigo-100 dark:from-violet-900/20 dark:to-indigo-900/20 border-violet-200 dark:border-violet-800/40 text-center">
           <p className="text-xs text-indigo-700 dark:text-indigo-300 font-bold my-0 flex items-center justify-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            Ready to climb? Link your profile, start coding, and watch your developer standings rise!
+            Ready to climb? Link your profile, start coding, and watch your
+            developer standings rise!
           </p>
         </Card>
       </motion.div>

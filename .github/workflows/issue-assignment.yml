@@ -1,0 +1,74 @@
+name: Issue Auto Assignment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    name: Handle /assign command
+    # Only run on issue comments (not PR comments), open issues, and skip bot comments
+    if: >
+      github.event.issue.pull_request == null &&
+      github.event.issue.state == 'open' &&
+      github.event.comment.user.type != 'Bot' &&
+      contains(github.event.comment.body, '/assign')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign or reject
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue, comment } = context.payload;
+            const commenter = comment.user.login;
+            const issueNumber = issue.number;
+            const commentBody = comment.body.trim();
+            const assignees = issue.assignees.map(a => a.login);
+
+            // Exact command check — reject '/assignees', '/assignment', etc.
+            const isExactCommand = commentBody === '/assign' || commentBody.startsWith('/assign ') || commentBody.endsWith(' /assign') || commentBody.includes('\n/assign') || commentBody.includes('/assign\n');
+            if (!isExactCommand) return;
+
+            // Issue already assigned — notify and stop
+            if (assignees.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `Hey @${commenter}! This issue is already assigned to @${assignees[0]}. Please look for another open issue to work on. 🙏`
+              });
+              return;
+            }
+
+            // Assign the commenter
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                assignees: [commenter]
+              });
+            } catch (err) {
+              console.log(`Failed to assign @${commenter}: ${err.message}`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `Sorry @${commenter}, I was unable to assign this issue to you. Please ping a maintainer for manual assignment.`
+              });
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `Hey @${commenter}! This issue has been assigned to you. 🎉\n\n` +
+                `Please go through our [Contributing Guide](../../blob/main/CONTRIBUTING.md) before you start. ` +
+                `Make sure to open a PR that references this issue (e.g. \`Closes #${issueNumber}\`).\n\n` +
+                `Happy contributing! 🚀`
+            });

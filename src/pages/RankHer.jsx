@@ -1,27 +1,33 @@
 import React, { useEffect, useState } from "react";
-import { Sparkles, Quote, Star, Loader2 } from "lucide-react";
-import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
-import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
+import { AlertTriangle, Sparkles, Quote, Star, Loader2 } from "lucide-react";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../lib/firebase";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 
 export const RankHer = () => {
-  const { user } = useAuth();
-
+  const { user, userData } = useAuth();
   // null  = subscription has not yet returned data (loading)
   // []    = subscription returned, zero qualifying users
   // [...] = real users ranked by totalPoints
   const [womenUsers, setWomenUsers] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-
     const q = query(
       collection(db, "users"),
       where("onboardingStatus", "==", "complete"),
       where("gender", "==", "female"),
       orderBy("points.totalPoints", "desc"),
-      limit(50)
+      limit(50),
     );
 
     const unsubscribe = onSnapshot(
@@ -35,14 +41,28 @@ export const RankHer = () => {
       },
       (error) => {
         console.error("RankHer leaderboard subscription error:", error);
+        setError(error.message || "Failed to load rankings");
         setWomenUsers([]);
-      }
+      },
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   const renderBody = () => {
+    if (error) {
+      return (
+        <Card className="p-8 text-center border-red-200 dark:border-red-800/40">
+          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-red-500 dark:text-red-400">
+            Unable to load rankings
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            {error}. Please try again later.
+          </p>
+        </Card>
+      );
+    }
 
     if (womenUsers === null) {
       return (
@@ -71,84 +91,103 @@ export const RankHer = () => {
       <>
         {/* Spotlight cards: top 2 real women engineers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {womenUsers.slice(0, 2).map((u) => (
-            <Card
-              key={u.uid}
-              className="p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 border-pink-500/15"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
+          {womenUsers.slice(0, 2).map((u) => {
+            const isCurrentUser = user && u.uid === user.uid;
+            const displayName = isCurrentUser
+              ? userData?.name || u.name
+              : u.name;
+            const displayAvatar = isCurrentUser
+              ? userData?.avatar || user?.photoURL || u.avatar
+              : u.avatar || u.photoURL;
 
-              <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
-                {(u.avatar || u.photoURL) ? (
-                  <img
-                    src={u.avatar || u.photoURL}
-                    alt={u.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-pink-500/10 flex items-center justify-center text-2xl font-black text-pink-500">
-                    {(u.name || "?")[0].toUpperCase()}
-                  </div>
-                )}
-                <div className="absolute bottom-1 right-1 bg-pink-500 text-white p-1 rounded-lg">
-                  <Star className="w-3.5 h-3.5 fill-white" />
-                </div>
-              </div>
+            return (
+              <Card
+                key={u.uid}
+                className="p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 border-pink-500/15"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
 
-              <div className="flex-1 space-y-3 text-center md:text-left w-full">
-                <div>
-                  <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest bg-pink-500/10 dark:bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/20">
-                    Rank #{u.rank}
-                  </span>
-                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-2 mb-0">
-                    {u.name}
-                  </h3>
-                  <span className="text-xs font-bold text-slate-400">
-                    {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
-                    {u.college && u.githubUsername ? ` • ${u.college}` : ""}
-                  </span>
-                </div>
-
-                {/* Progress Bar for Spotlight User */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-pink-500">XP Progress</span>
-                    <span className="text-slate-600 dark:text-pink-400">
-                      {topPoints > 0 ? Math.round(((u.points?.totalPoints || 0) / topPoints) * 100) : 0}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%` }}
+                <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
+                  {displayAvatar ? (
+                    <img
+                      src={displayAvatar}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
                     />
+                  ) : (
+                    <div className="w-full h-full bg-pink-500/10 flex items-center justify-center text-2xl font-black text-pink-500">
+                      {(displayName || "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute bottom-1 right-1 bg-pink-500 text-white p-1 rounded-lg">
+                    <Star className="w-3.5 h-3.5 fill-white" />
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/25 dark:border-slate-800/25 relative">
-                  <Quote className="w-4 h-4 text-pink-300 dark:text-pink-500/40 absolute top-2 left-2" />
-                  <p className="text-xs italic text-slate-500 dark:text-slate-400 pl-5 pr-2 pt-1 font-medium leading-relaxed">
-                    {(u.points?.totalPoints || 0).toLocaleString()} XP earned
-                  </p>
-                </div>
+                <div className="flex-1 space-y-3 text-center md:text-left w-full">
+                  <div>
+                    <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest bg-pink-500/10 dark:bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/20">
+                      Rank #{u.rank}
+                    </span>
+                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-2 mb-0">
+                      {displayName}
+                    </h3>
+                    <span className="text-xs font-bold text-slate-400">
+                      {u.githubUsername
+                        ? `@${u.githubUsername}`
+                        : u.college || ""}
+                      {u.college && u.githubUsername ? ` • ${u.college}` : ""}
+                    </span>
+                  </div>
 
-                <div className="flex items-center justify-center md:justify-start gap-4 text-xs font-bold text-slate-500 pt-1">
-                  <span>
-                    GitRank:{" "}
-                    <span className="text-slate-800 dark:text-white">
-                      {u.points?.gitRankPoints ?? 0}
+                  {/* Progress Bar for Spotlight User */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-pink-500">XP Progress</span>
+                      <span className="text-slate-600 dark:text-pink-400">
+                        {topPoints > 0
+                          ? Math.round(
+                              ((u.points?.totalPoints || 0) / topPoints) * 100,
+                            )
+                          : 0}
+                        %
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800/80 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/25 dark:border-slate-800/25 relative">
+                    <Quote className="w-4 h-4 text-pink-300 dark:text-pink-500/40 absolute top-2 left-2" />
+                    <p className="text-xs italic text-slate-500 dark:text-slate-400 pl-5 pr-2 pt-1 font-medium leading-relaxed">
+                      {(u.points?.totalPoints || 0).toLocaleString()} XP earned
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-center md:justify-start gap-4 text-xs font-bold text-slate-500 pt-1">
+                    <span>
+                      GitRank:{" "}
+                      <span className="text-slate-800 dark:text-white">
+                        {u.points?.gitRankPoints ?? 0}
+                      </span>
                     </span>
-                  </span>
-                  <span>
-                    Streak:{" "}
-                    <span className="text-orange-500">
-                      {u.points?.streakPoints ?? 0} pts
+                    <span>
+                      Streak:{" "}
+                      <span className="text-orange-500">
+                        {u.points?.streakPoints ?? 0} pts
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
 
         {/* Empowerment banner */}
@@ -187,64 +226,84 @@ export const RankHer = () => {
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm mt-4">
-            {womenUsers.map((u) => (
-              <div
-                key={u.uid}
-                className="py-4 flex items-center justify-between gap-4 hover:bg-pink-500/5 dark:hover:bg-pink-500/5 transition-colors rounded-xl px-2"
-              >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="text-sm font-bold text-pink-500 w-6">
-                    #{u.rank}
-                  </span>
+            {womenUsers.map((u) => {
+              const isCurrentUser = user && u.uid === user.uid;
+              const displayName = isCurrentUser
+                ? userData?.name || u.name
+                : u.name;
+              const displayAvatar = isCurrentUser
+                ? userData?.avatar || user?.photoURL || u.avatar
+                : u.avatar || u.photoURL;
 
-                  <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
-                    {(u.avatar || u.photoURL) ? (
-                      <img
-                        src={u.avatar || u.photoURL}
-                        alt={u.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-black text-pink-500">
-                        {(u.name || "?")[0].toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+              return (
+                <div
+                  key={u.uid}
+                  className="py-4 flex items-center justify-between gap-4 hover:bg-pink-500/5 dark:hover:bg-pink-500/5 transition-colors rounded-xl px-2"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="text-sm font-bold text-pink-500 w-6">
+                      #{u.rank}
+                    </span>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-extrabold text-slate-900 dark:text-white block leading-tight truncate">
-                        {u.name}
-                      </span>
-                      <span className="text-[10px] text-pink-500/80 font-bold truncate hidden sm:inline">
-                        {u.githubUsername ? `@${u.githubUsername}` : u.college || ""}
-                      </span>
-                    </div>
-                    {/* Progress Bar */}
-                    <div className="flex items-center gap-3 mt-1.5">
-                      <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%` }}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center border border-pink-500/20">
+                      {displayAvatar ? (
+                        <img
+                          src={displayAvatar}
+                          alt={displayName}
+                          className="w-full h-full object-cover"
                         />
+                      ) : (
+                        <span className="text-sm font-black text-pink-500">
+                          {(displayName || "?")[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-extrabold text-slate-900 dark:text-white block leading-tight truncate">
+                          {displayName}
+                        </span>
+                        <span className="text-[10px] text-pink-500/80 font-bold truncate hidden sm:inline">
+                          {u.githubUsername
+                            ? `@${u.githubUsername}`
+                            : u.college || ""}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-bold text-pink-500/80 min-w-[28px] text-right">
-                        {topPoints > 0 ? Math.round(((u.points?.totalPoints || 0) / topPoints) * 100) : 0}%
-                      </span>
+                      {/* Progress Bar */}
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-pink-500 to-pink-400 h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${topPoints > 0 ? ((u.points?.totalPoints || 0) / topPoints) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-pink-500/80 min-w-[28px] text-right">
+                          {topPoints > 0
+                            ? Math.round(
+                                ((u.points?.totalPoints || 0) / topPoints) *
+                                  100,
+                              )
+                            : 0}
+                          %
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="text-right min-w-[75px] flex-shrink-0">
-                  <span className="block font-black text-pink-600 dark:text-pink-400 leading-none">
-                    {(u.points?.totalPoints || 0).toLocaleString()}
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    XP Points
-                  </span>
+                  <div className="text-right min-w-[75px] flex-shrink-0">
+                    <span className="block font-black text-pink-600 dark:text-pink-400 leading-none">
+                      {(u.points?.totalPoints || 0).toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      XP Points
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       </>
