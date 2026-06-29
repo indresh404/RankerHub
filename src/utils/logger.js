@@ -1,24 +1,24 @@
 const logger = {
   info: (message, data = {}) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.info(`[INFO] ${message}`, sanitizeData(data));
     }
   },
 
   error: (message, error, context = {}) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error(`[ERROR] ${message}`, error, sanitizeData(context));
     }
   },
 
   warn: (message, data = {}) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.warn(`[WARN] ${message}`, sanitizeData(data));
     }
   },
 
   debug: (message, data = {}) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.debug(`[DEBUG] ${message}`, sanitizeData(data));
     }
   },
