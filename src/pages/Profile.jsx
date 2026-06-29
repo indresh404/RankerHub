@@ -307,6 +307,8 @@ export const Profile = () => {
           ...updateData,
         }));
       }
+      // Sync avatar across open tabs via localStorage
+      localStorage.setItem(`rh_avatar_${user.uid}`, editAvatar.trim());
 
       // Notify other tabs about avatar change
       if (updateData.avatar) {

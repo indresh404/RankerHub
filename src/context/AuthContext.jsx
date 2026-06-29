@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { githubFetch, getRateLimitMessage } from "../utils/githubRateLimit";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import {
   onAuthStateChanged,
   getAdditionalUserInfo,
@@ -107,6 +107,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(auth ? true : false);
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [ghAccessToken, setGhAccessToken] = useState(null);
+  const uidRef = useRef(null);
+
+  // Cross-tab avatar sync: listen for avatar updates from other tabs
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key?.startsWith('rh_avatar_') && e.newValue && e.key.replace('rh_avatar_', '') === uidRef.current) {
+        setUserData(prev => prev ? { ...prev, avatar: e.newValue } : prev);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   useEffect(() => {
     if (!auth) {
@@ -190,6 +202,7 @@ export const AuthProvider = ({ children }) => {
 
       if (currentUser) {
         setUser(currentUser);
+        uidRef.current = currentUser.uid;
 
         const userDocRef = doc(db, "users", currentUser.uid);
 
@@ -242,6 +255,7 @@ export const AuthProvider = ({ children }) => {
         setUserData(null);
         setIsOnboarding(false);
         setLoading(false);
+        uidRef.current = null;
       }
     });
 
