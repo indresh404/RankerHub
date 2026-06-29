@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
+import logger from "../utils/logger";
 
 const AuthContext = createContext({});
 
@@ -57,9 +58,9 @@ const checkAndUpdateStreak = async (data, docRef) => {
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints
       });
-      console.log("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
+      logger.info("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
     } catch (err) {
-      console.error("Failed to update streak:", err);
+      logger.error("Failed to update streak:", err);
     }
   }
 };
@@ -105,7 +106,7 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
           }
         }, (error) => {
-          console.error("Real-time profile listener error:", error);
+          logger.error("Real-time profile listener error:", error);
           setLoading(false);
         });
 
@@ -175,7 +176,7 @@ export const AuthProvider = ({ children }) => {
 
       return authUser;
     } catch (error) {
-      console.error("Login service failure:", error);
+      logger.error("Login service failure:", error);
       setLoading(false);
       throw error;
     }
@@ -194,7 +195,7 @@ export const AuthProvider = ({ children }) => {
       setIsOnboarding(false);
       setGhAccessToken(null);
     } catch (error) {
-      console.error("Logout failure:", error);
+      logger.error("Logout failure:", error);
     } finally {
       setLoading(false);
     }
@@ -245,7 +246,7 @@ export const AuthProvider = ({ children }) => {
           primaryLanguage = sortedLangs[0];
         }
       } catch (err) {
-        console.warn("Stars/Language retrieval warning, defaulting:", err);
+        logger.warn("Stars/Language retrieval warning, defaulting:", err);
       }
 
       let commits = 0;
@@ -253,7 +254,7 @@ export const AuthProvider = ({ children }) => {
         const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers });
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
+        logger.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
         commits = 0;
       }
 
@@ -262,7 +263,7 @@ export const AuthProvider = ({ children }) => {
         const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers });
         prs = prsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
+        logger.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
         prs = 0;
       }
 
@@ -271,7 +272,7 @@ export const AuthProvider = ({ children }) => {
         const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers });
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
+        logger.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
         reviews = 0;
       }
 
@@ -319,7 +320,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (err) {
-        console.warn("GitHub events retrieval failed for streak:", err);
+        logger.warn("GitHub events retrieval failed for streak:", err);
       }
 
       // Add points for each day of the active GitHub streak (+10 XP per day)
@@ -337,7 +338,7 @@ export const AuthProvider = ({ children }) => {
         gitRankPoints
       };
     } catch (error) {
-      console.error("Error executing GitHub stats fetcher snapshot:", error);
+      logger.error("Error executing GitHub stats fetcher snapshot:", error);
       return {
         commits: 0,
         prs: 0,
@@ -359,7 +360,7 @@ export const AuthProvider = ({ children }) => {
       const lastSyncTime = new Date(userData.lastSync).getTime();
       const cooldownMs = 5 * 60 * 1000;
       if (Date.now() - lastSyncTime < cooldownMs) {
-        console.log("Background GitHub sync skipped: Cooldown active.");
+        logger.info("Background GitHub sync skipped: Cooldown active.");
         return;
       }
     }
@@ -402,9 +403,9 @@ export const AuthProvider = ({ children }) => {
       // Execute atomic transaction
       await batch.commit();
 
-      console.log("Background GitHub sync completed successfully via atomic batch.");
+      logger.info("Background GitHub sync completed successfully via atomic batch.");
     } catch (error) {
-      console.error("Background GitHub sync failed:", error);
+      logger.error("Background GitHub sync failed:", error);
     }
   };
 

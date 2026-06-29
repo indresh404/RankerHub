@@ -3,6 +3,7 @@ import { connectAuthEmulator, getAuth, GithubAuthProvider, signInWithPopup, sign
 import { getAnalytics } from "firebase/analytics";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import logger from "../utils/logger";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -27,7 +28,7 @@ const requiredConfigKeys = [
 const hasRequiredConfig = requiredConfigKeys.every((key) => Boolean(firebaseConfig[key]));
 
 if (!hasRequiredConfig) {
-  console.warn("Firebase is not configured. Auth, database, analytics, and storage services are disabled for this environment.");
+  logger.warn("Firebase is not configured. Auth, database, analytics, and storage services are disabled for this environment.");
 }
 
 // Initialize Firebase
@@ -74,7 +75,7 @@ if (app && typeof window !== "undefined") {
   try {
     analyticsInstance = getAnalytics(app);
   } catch (error) {
-    console.warn("Analytics initialization skipped:", error);
+    logger.warn("Analytics initialization skipped:", error);
   }
 }
 
@@ -115,7 +116,7 @@ export const signInWithGitHub = async (requestRepoScope = false) => {
     
     return { user, accessToken, userData, result }; 
   } catch (error) {
-    console.error("GitHub sign-in error:", error);
+    logger.error("GitHub sign-in error:", error);
     if (error.code === 'auth/account-exists-with-different-credential') {
       throw new Error('An account already exists with the same email address.', { cause: error });
     }
@@ -136,7 +137,7 @@ export const signOutUser = async () => {
     await signOut(auth);
     return true;
   } catch (error) {
-    console.error("Sign out error:", error);
+    logger.error("Sign out error:", error);
     throw error;
   }
 };
@@ -153,7 +154,7 @@ export const getCurrentUserToken = async () => {
       const token = await user.getIdToken();
       return token;
     } catch (error) {
-      console.error("Error getting user token:", error);
+      logger.error("Error getting user token:", error);
       return null;
     }
   }
@@ -172,7 +173,7 @@ export const refreshUserToken = async () => {
       const token = await user.getIdToken(true); // Force refresh
       return token;
     } catch (error) {
-      console.error("Error refreshing user token:", error);
+      logger.error("Error refreshing user token:", error);
       return null;
     }
   }
