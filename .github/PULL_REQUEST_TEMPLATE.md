@@ -17,6 +17,13 @@ Please delete options that are not relevant:
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
 
+## GSSoC Scoring Labels
+To enable proper GSSoC point calculation, please request the following labels (maintainers will apply them):
+- **Difficulty Level** (choose one): `level:beginner`, `level:intermediate`, `level:advanced`, `level:critical`
+- **Change Type** (choose one): `type:bug` (2x), `type:feature` (1x), `type:refactor` (1.5x), `type:docs` (0.5x)
+- **Quality** (optional multiplier): `quality:clean` (1.2x), `quality:exceptional` (1.5x)
+- **Approval** (required for scoring): `gssoc:approved`
+
 ## Screenshots / Videos (if applicable)
 
 Please add screenshots or screen recordings to demonstrate the visual changes.

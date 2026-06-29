@@ -33,7 +33,18 @@ jobs:
               { name: 'nsoc', color: 'ff007f', description: 'NSoC' },
               { name: 'pending-review', color: 'fbca04', description: 'PR is pending review' },
               { name: 'needs-review', color: 'fbca04', description: 'Issue needs review' },
-              { name: 'ready-to-merge', color: '0e8a16', description: 'All checks passed, ready to be merged' }
+              { name: 'ready-to-merge', color: '0e8a16', description: 'All checks passed, ready to be merged' },
+              { name: 'gssoc:approved', color: '76c893', description: 'GSSoC scoring trigger - PR qualifies for GSSoC points' },
+              { name: 'level:beginner', color: 'a8e6cf', description: 'GSSoC difficulty: Beginner' },
+              { name: 'level:intermediate', color: '56ab91', description: 'GSSoC difficulty: Intermediate' },
+              { name: 'level:advanced', color: '38a169', description: 'GSSoC difficulty: Advanced' },
+              { name: 'level:critical', color: '2d5016', description: 'GSSoC difficulty: Critical' },
+              { name: 'type:bug', color: 'f8949a', description: 'GSSoC type: Bug fix (2x points)' },
+              { name: 'type:feature', color: 'a8dadc', description: 'GSSoC type: Feature (1x points)' },
+              { name: 'type:refactor', color: 'ffc8dd', description: 'GSSoC type: Refactor (1.5x points)' },
+              { name: 'type:docs', color: 'caffbf', description: 'GSSoC type: Documentation (0.5x points)' },
+              { name: 'quality:clean', color: 'f1faee', description: 'GSSoC quality: Clean code (1.2x multiplier)' },
+              { name: 'quality:exceptional', color: 'd6eadf', description: 'GSSoC quality: Exceptional (1.5x multiplier)' }
             ];
 
             for (const label of labels) {
