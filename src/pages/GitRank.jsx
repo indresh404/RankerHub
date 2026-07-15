@@ -225,7 +225,10 @@ export const GitRank = () => {
           rank: i + 1,
         }));
 
-        setUsersList(ranked);
+        setUsersList((prev) => {
+  const extraPages = prev.slice(50); // users loaded via "Load More"
+  return [...ranked, ...extraPages].map((u, i) => ({ ...u, rank: i + 1 }));
+});
         setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
         setHasMore(snapshot.docs.length === 50);
         if (!snapshot.metadata.fromCache) {
