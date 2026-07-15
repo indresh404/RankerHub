@@ -295,6 +295,72 @@ export const GitRank = () => {
     }
   };
 
+  // Jump to a specific rank on the leaderboard (Issue #619)
+  const [jumpRankInput, setJumpRankInput] = useState("");
+  const [jumpingToRank, setJumpingToRank] = useState(false);
+  const [jumpError, setJumpError] = useState("");
+
+  const handleJumpToRank = async () => {
+    const targetRank = parseInt(jumpRankInput, 10);
+    if (!targetRank || targetRank < 1) {
+      setJumpError("Enter a valid rank number");
+      return;
+    }
+
+    setJumpingToRank(true);
+    setJumpError("");
+    try {
+      const constraints = [where("onboardingStatus", "==", "complete")];
+
+      if (activeTab === "gitrank") {
+        constraints.push(orderBy("points.gitRankPoints", "desc"));
+        constraints.push(orderBy("githubStats.commits", "desc"));
+      } else {
+        constraints.push(orderBy("points.referralPoints", "desc"));
+      }
+      constraints.push(orderBy("githubUsername", "asc"));
+
+      if (selectedLanguage !== "All") {
+        constraints.push(
+          where("githubStats.primaryLanguage", "==", selectedLanguage),
+        );
+      }
+      if (selectedCollege !== "All" && selectedCollege.trim() !== "") {
+        constraints.push(where("college", "==", selectedCollege));
+      }
+
+      constraints.push(limit(targetRank));
+
+      const q = query(collection(db, "users"), ...constraints);
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        setJumpError("No users found");
+        setJumpingToRank(false);
+        return;
+      }
+
+      const allDocs = snapshot.docs;
+      const windowStart = Math.max(0, allDocs.length - 50);
+      const windowDocs = allDocs.slice(windowStart);
+
+      const jumped = windowDocs.map((doc, i) => ({
+        ...doc.data(),
+        rank: windowStart + i + 1,
+      }));
+
+      setUsersList(jumped);
+      setLastVisible(allDocs[allDocs.length - 1]);
+      setHasMore(allDocs.length === targetRank);
+      setJumpRankInput("");
+    } catch (err) {
+      console.error("Jump to rank error:", err);
+      setJumpError("Failed to jump to rank. Try again.");
+    } finally {
+      setJumpingToRank(false);
+    }
+  };
+
   // 2. Fetch GitHub Events/Repos for Charts (Authenticated Only)
   useEffect(() => {
     if (!userData?.githubUsername) {
@@ -1519,6 +1585,33 @@ export const GitRank = () => {
           )}
         </div>
       </Card>
+
+      {/* Jump to Rank (Issue #619) */}
+      <div className="flex flex-col items-center gap-2 w-full">
+        <div className="flex justify-center items-center gap-2 w-full">
+          <input
+            type="number"
+            min="1"
+            placeholder="Jump to rank..."
+            value={jumpRankInput}
+            onChange={(e) => setJumpRankInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleJumpToRank()}
+            className="w-36 px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
+          />
+          <button
+            onClick={handleJumpToRank}
+            disabled={jumpingToRank}
+            className="px-4 py-2 text-xs font-bold rounded-xl border border-violet-500/30 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 disabled:opacity-50 transition-all"
+          >
+            {jumpingToRank ? "Jumping..." : "Go"}
+          </button>
+        </div>
+        {jumpError && (
+          <p className="text-center text-xs text-red-500 font-semibold">
+            {jumpError}
+          </p>
+        )}
+      </div>
 
       {/* Pagination Controls */}
       {hasMore && (
