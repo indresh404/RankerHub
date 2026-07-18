@@ -2,9 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /reports/{reportId} {
-  allow create: if request.auth != null;
-  allow read, update, delete: if false;
-}
+      allow create: if request.auth != null;
+      allow read, update, delete: if false;
+    }
 
     // Helper: Is the user authenticated?
     function isAuthenticated() {
@@ -41,6 +41,16 @@ service cloud.firestore {
         && (request.resource.data.points.totalPoints - resource.data.points.totalPoints == request.resource.data.points.streakPoints - resource.data.points.streakPoints);
     }
 
+    // Helper (Issue #636): Only allow a referral credit if the referee's own account
+    // looks like a genuine, aged/active GitHub user — not a same-day throwaway made
+    // purely to farm the referrer's own link. githubAccountAgeAtSignupDays and the
+    // repo/follower counts are written once, at signup, in AuthContext.jsx.
+    function refereeIsLegitimate(refereeUid) {
+      let referee = get(/databases/$(database)/documents/users/$(refereeUid)).data;
+      return referee.githubAccountAgeAtSignupDays >= 30
+        && (referee.githubPublicRepos >= 1 || referee.githubFollowers >= 1);
+    }
+
     match /users/{uid} {
       // Leaderboard requires public access to view user standings
       allow read: if true;
@@ -56,7 +66,7 @@ service cloud.firestore {
       allow update: if isOwner(uid) && isStreakUpdate();
 
       // RULE 3: Original strict rules for onboarding and points updates
-      allow update: if isOwner(uid) 
+      allow update: if isOwner(uid)
         // 1. Immutable onboarding fields check
         && (resource.data.onboardingStatus != "complete" || (
              request.resource.data.gender == resource.data.gender &&
@@ -70,7 +80,7 @@ service cloud.firestore {
 
         // 3. Prevent arbitrary point and HubCoin spikes during normal client writes:
         && (
-// Transitioning from incomplete -> complete
+          // Transitioning from incomplete -> complete
           (resource.data.onboardingStatus == "incomplete" && request.resource.data.onboardingStatus == "complete") ||
           // Points unchanged (Mascot purchases, profile updates, etc.)
           (
@@ -81,7 +91,7 @@ service cloud.firestore {
           ) ||
           // NEW LIMIT: Cap changed from 100 to 200 for CodingVerse Hard challenges
           (
-            request.resource.data.points.totalPoints > resource.data.points.totalPoints && 
+            request.resource.data.points.totalPoints > resource.data.points.totalPoints &&
             request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 200 &&
             // HubCoins can increase by at most the same amount as points (e.g. +10 HubCoins for +100 XP)
             (request.resource.data.hubCoins != null ? request.resource.data.hubCoins : 500) - (resource.data.hubCoins != null ? resource.data.hubCoins : 500) <= (request.resource.data.points.totalPoints - resource.data.points.totalPoints) &&
@@ -111,21 +121,26 @@ service cloud.firestore {
             request.resource.data.points.auditorPoints == resource.data.points.auditorPoints &&
             request.resource.data.lastSync == request.time &&
             (
-              !("lastSync" in resource.data) || 
-              resource.data.lastSync == null || 
-              (resource.data.lastSync is string) || 
+              !("lastSync" in resource.data) ||
+              resource.data.lastSync == null ||
+              (resource.data.lastSync is string) ||
               (resource.data.lastSync is number) ||
               (resource.data.lastSync is timestamp && request.time.toMillis() >= resource.data.lastSync.toMillis() + 300000)
             )
           )
         );
 
-// RULE 4: Referrer update - Prevent multi-write inflation exploit (Issue #306)
-      // Locks referralPoints to the actual totalEarned value in the referrals index.
+      // RULE 4 (Issue #636): Referrer update - Prevent multi-write inflation exploit
+      // (Issue #306) AND self-referral farming via disposable accounts (Issue #636).
+      // Locks referralPoints to the actual totalEarned value in the referrals index,
+      // and now additionally requires the referee's account to pass refereeIsLegitimate()
+      // before any credit is allowed at all.
       allow update: if isAuthenticated()
         && request.auth.uid != uid
-        // 🛡️ NEW GUARD (Issue #432): Only users actively onboarding can trigger a referral point grant
+        // 🛡️ GUARD (Issue #432): Only users actively onboarding can trigger a referral point grant
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.onboardingStatus == "incomplete"
+        // 🛡️ GUARD (Issue #636): Referee's own account must look genuine, not a same-day throwaway
+        && refereeIsLegitimate(request.auth.uid)
         // Prevent modifying any root-level fields other than points
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points'])
         // FIX: Sync referralPoints directly with the referrals index document's totalEarned counter
@@ -138,25 +153,29 @@ service cloud.firestore {
         && request.resource.data.points.auditorPoints == resource.data.points.auditorPoints
         && exists(/databases/$(database)/documents/referrals/$(uid))
         && request.auth.uid in get(/databases/$(database)/documents/referrals/$(uid)).data.usedBy;
+    }
 
     match /referrals/{uid} {
       allow read: if isAuthenticated();
-      
+
       // Let the owner create their own referrals index document
       allow create: if isOwner(uid);
 
       // Allow either the owner to write, OR a referred user to atomically append their UID
+      // (Issue #636): refereeIsLegitimate() added alongside the existing onboarding guard.
       allow update: if isOwner(uid) || (
         isAuthenticated()
-        // 🛡️ NEW GUARD (Issue #432): Prevent existing users from arbitrarily claiming codes
+        // 🛡️ GUARD (Issue #432): Prevent existing users from arbitrarily claiming codes
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.onboardingStatus == "incomplete"
+        // 🛡️ GUARD (Issue #636): Referee's own account must look genuine
+        && refereeIsLegitimate(request.auth.uid)
         && !(request.auth.uid in resource.data.usedBy)
         && request.resource.data.usedBy.size() == resource.data.usedBy.size() + 1
         && request.resource.data.usedBy[resource.data.usedBy.size()] == request.auth.uid
         && request.resource.data.totalEarned == resource.data.totalEarned + 100
       );
     }
-    
+
     match /follows/{followId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.followerId == request.auth.uid;
