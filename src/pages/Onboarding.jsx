@@ -421,30 +421,16 @@ export const Onboarding = () => {
             );
           }
 
-          if (referrerIndexSnap.exists()) {
-            const currentPendingBy = referrerIndexSnap.data().pendingBy || [];
-            const currentUsedBy = referrerIndexSnap.data().usedBy || [];
-
-            // Guard against duplicate queuing if this ever runs twice
-            if (
-              !currentPendingBy.includes(activeUid) &&
-              !currentUsedBy.includes(activeUid)
-            ) {
-              transaction.update(referrerIndexRef, {
-                pendingBy: [...currentPendingBy, activeUid],
-              });
-            }
+          // If the referrer doesn't have a referrals index doc yet, create an
+          // empty one now. Actual point crediting happens after this transaction
+          // completes, as a separate step (Issue #636) — see below.
+          if (!referrerIndexSnap.exists()) {
+            transaction.set(referrerIndexRef, {
+              referralCode: referrerCodeClean,
+              usedBy: [],
+              totalEarned: 0,
+            });
           }
-
-        if (referrerIndexSnap.exists()) {
-          // nothing to do here anymore — referral crediting happens after
-          // this transaction completes, in a separate step below
-        } else {
-          transaction.set(referrerIndexRef, {
-            referralCode: referrerCodeClean,
-            usedBy: [],
-            totalEarned: 0,
-          });
         }
 
         // Write my user profile
