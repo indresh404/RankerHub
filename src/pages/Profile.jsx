@@ -97,7 +97,6 @@ export const Profile = () => {
         if (!snapshot1.empty) {
           const profileData = snapshot1.docs[0].data();
           setPublicProfile(profileData);
-          // Issue #585: Save to recently visited profiles in localStorage
           try {
             const key = "rh_recently_visited";
             const existing = JSON.parse(localStorage.getItem(key) || "[]");
@@ -162,6 +161,18 @@ export const Profile = () => {
   const [learningInput, setLearningInput] = useState("");
   const editDropdownRef = useRef(null);
   const profileCardRef = useRef(null);
+
+  // Keyboard navigation for Edit Modal
+  useEffect(() => {
+    const handleModalKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (isEditModalOpen) setIsEditModalOpen(false);
+        if (isEmbedModalOpen) setIsEmbedModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleModalKeyDown);
+    return () => window.removeEventListener("keydown", handleModalKeyDown);
+  }, [isEditModalOpen, isEmbedModalOpen]);
 
   // GitHub Real Heatmap State
   const [githubHeatmap, setGithubHeatmap] = useState({
@@ -308,7 +319,6 @@ export const Profile = () => {
         }));
       }
 
-      // Notify other tabs about avatar change
       if (updateData.avatar) {
         localStorage.setItem(
           "rh_avatar_updated",
@@ -347,12 +357,10 @@ export const Profile = () => {
     if (user && userData?.githubUsername) {
       syncGitHubData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
     if (userData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalSocialLinks((prev) => ({
         ...prev,
         linkedinUrl: userData.linkedinUrl || null,
@@ -380,7 +388,6 @@ export const Profile = () => {
         const currentRank = snapshot.data().count + 1;
         setRank(`#${currentRank}`);
 
-        // Save rank snapshot if it is the user's own profile
         if (isOwnProfile && user?.uid) {
           const { saveRankSnapshot } =
             await import("../services/rankHistoryService");
@@ -400,7 +407,6 @@ export const Profile = () => {
     fetchRank();
   }, [userData, isOwnProfile, user]);
 
-  // Fetch REAL Profile Heatmap Data for GitHub
   useEffect(() => {
     const fetchGithubHeatmap = async () => {
       const username = userData?.githubUsername;
@@ -485,7 +491,6 @@ export const Profile = () => {
     fetchGithubHeatmap();
   }, [userData?.githubUsername]);
 
-  // Issue #204: RankerHub Platform Activity Heatmap Logic
   const platformHeatmap = useMemo(() => {
     const logs = userData?.platformActivityLogs || [];
     const weeks = 16;
@@ -496,7 +501,6 @@ export const Profile = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Map timestamps to frequency counts
     const activityMap = {};
     logs.forEach((log) => {
       const d = new Date(log);
@@ -559,7 +563,7 @@ export const Profile = () => {
         ]);
         return;
       } catch {
-        // user may have cancelled; fall through to clipboard fallback
+        // user cancelled; fallback to clipboard
       }
     }
 
@@ -573,9 +577,9 @@ export const Profile = () => {
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        const success = document.execCommand('copy');
+        const success = document.execCommand("copy");
         document.body.removeChild(ta);
-        if (!success) throw new Error('execCommand copy failed');
+        if (!success) throw new Error("execCommand copy failed");
       }
 
       setCopied(true);
@@ -624,7 +628,7 @@ export const Profile = () => {
         ]);
         return;
       } catch {
-        // user may have cancelled; fall through to clipboard fallback
+        // user cancelled
       }
     }
 
@@ -638,9 +642,9 @@ export const Profile = () => {
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        const success = document.execCommand('copy');
+        const success = document.execCommand("copy");
         document.body.removeChild(ta);
-        if (!success) throw new Error('execCommand copy failed');
+        if (!success) throw new Error("execCommand copy failed");
       }
       setToasts((prev) => [
         ...prev,
@@ -680,9 +684,9 @@ export const Profile = () => {
         ta.style.left = "-9999px";
         document.body.appendChild(ta);
         ta.select();
-        const success = document.execCommand('copy');
+        const success = document.execCommand("copy");
         document.body.removeChild(ta);
-        if (!success) throw new Error('execCommand copy failed');
+        if (!success) throw new Error("execCommand copy failed");
       }
       setToasts((prev) => [
         ...prev,
@@ -768,6 +772,8 @@ export const Profile = () => {
 
       const isDev = import.meta.env.VITE_DEV_AUTH_BYPASS === "true";
       if (isDev) {
+        const previousFocus = document.activeElement;
+
         const overlay = document.createElement("div");
         overlay.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.8);z-index:999999;padding:24px;`;
 
@@ -780,18 +786,36 @@ export const Profile = () => {
         dbg.textContent = `Preview nodes: ${clone.getElementsByTagName("*").length}`;
 
         const closeBtn = document.createElement("button");
+        closeBtn.type = "button";
         closeBtn.textContent = "Close Preview";
+        closeBtn.setAttribute("aria-label", "Close profile preview overlay");
         closeBtn.style.cssText =
           "position:absolute;right:12px;top:12px;padding:6px 10px;background:#111827;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000";
-        closeBtn.onclick = () => {
-          if (overlay && overlay.parentNode)
+
+        const handleClose = () => {
+          if (overlay && overlay.parentNode) {
             overlay.parentNode.removeChild(overlay);
+          }
+          window.removeEventListener("keydown", handleKeyDown);
+          if (previousFocus && typeof previousFocus.focus === "function") {
+            previousFocus.focus();
+          }
         };
 
+        const handleKeyDown = (e) => {
+          if (e.key === "Escape") handleClose();
+        };
+
+        closeBtn.onclick = handleClose;
+        window.addEventListener("keydown", handleKeyDown);
+
         const downloadBtn = document.createElement("button");
+        downloadBtn.type = "button";
         downloadBtn.textContent = "Download Preview as PNG";
+        downloadBtn.setAttribute("aria-label", "Download profile card as PNG image");
         downloadBtn.style.cssText =
           "position:absolute;right:140px;top:12px;padding:6px 10px;background:#7c3aed;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000";
+
         downloadBtn.onclick = async () => {
           try {
             const width = 1200;
@@ -967,1768 +991,246 @@ export const Profile = () => {
           }
         };
 
-        try {
-          const avatarUrl =
-            (userData && (userData.avatar || user?.photoURL)) ||
-            "https://avatars.githubusercontent.com/u/9919?v=4";
-          const displayName =
-            (userData && userData.name) ||
-            (user && user.displayName) ||
-            "Developer";
-          const usernameHandle =
-            (userData && userData.githubUsername) || "developer";
-          const collegeName =
-            (userData && userData.college) || "Mumbai College";
-          const referralCode = (userData && userData.referralCode) || "N/A";
-          const simpleHtml = `
-            <div style="width:100%;max-width:980px;border-radius:12px;overflow:hidden;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;background:linear-gradient(135deg,#0f172a,#0b1220);color:#fff;box-shadow:0 10px 30px rgba(2,6,23,0.6);">
-              <div style="display:flex;gap:20px;align-items:center;padding:28px;">
-                <div style="width:120px;height:120px;border-radius:16px;overflow:hidden;flex-shrink:0;border:4px solid rgba(255,255,255,0.06);">
-                  <img src="${avatarUrl}" alt="avatar" style="width:100%;height:100%;object-fit:cover;display:block;" />
-                </div>
-                <div style="flex:1;">
-                  <div style="font-size:36px;font-weight:800;margin-bottom:6px">${displayName}</div>
-                  <div style="color:#93c5fd;font-size:14px">@${usernameHandle} • ${collegeName}</div>
-                  <p style="color:rgba(255,255,255,0.8);margin-top:12px;max-width:820px;font-size:14px">Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.</p>
-                </div>
-                <div style="width:220px;text-align:right;padding-left:8px;">
-                  <div style="color:#9ca3af;font-size:13px">RankerHub</div>
-                  <div style="font-size:16px;font-weight:700;margin-top:8px">Shareable Profile Card</div>
-                  <div style="margin-top:18px;background:rgba(255,255,255,0.04);padding:10px;border-radius:10px;">
-                    <div style="font-size:12px;color:#9ca3af">Referral</div>
-                    <div style="font-weight:800">${referralCode}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-
-          container.innerHTML = simpleHtml;
-        } catch {
-          try {
-            container.appendChild(clone);
-          } catch {
-            container.innerHTML = clone.outerHTML;
-          }
-        }
-
+        container.appendChild(dbg);
+        container.appendChild(downloadBtn);
+        container.appendChild(closeBtn);
+        container.appendChild(clone);
         overlay.appendChild(container);
-        overlay.appendChild(dbg);
-        overlay.appendChild(closeBtn);
-        overlay.appendChild(downloadBtn);
         document.body.appendChild(overlay);
-        return;
+
+        setTimeout(() => closeBtn.focus(), 0);
       }
-
-      document.body.appendChild(clone);
-      const dataUrl = await domtoimage.toPng(clone, {
-        cacheBust: true,
-        bgcolor: null,
-      });
-      document.body.removeChild(clone);
-
-      const link = document.createElement("a");
-      link.download = `${userData?.githubUsername || userData?.name || "profile"}-rankerhub.png`;
-      link.href = dataUrl;
-      link.click();
     } catch (err) {
-      console.error("Export error", err);
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: "Failed to export profile card.",
-          type: "error",
-        },
-      ]);
+      console.error("Profile card export failed", err);
     }
-  };
-
-  const getDiscordProfileUrl = (discordValue) => {
-    if (!discordValue) return null;
-    const value = discordValue.trim();
-    if (!value) return null;
-    if (/^https?:\/\//i.test(value)) {
-      return value;
-    }
-    const userId = value.replace(/^@/, "");
-    return `https://discord.com/users/${encodeURIComponent(userId)}`;
-  };
-
-  const handleUpdateSocialLink = async (type, value) => {
-    if (!user) return;
-
-    setUpdating(true);
-    try {
-      const userRef = doc(db, "users", user.uid);
-
-      const userDocSnap = await getDoc(userRef);
-      if (!userDocSnap.exists()) {
-        setToasts((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(),
-            message: "Profile not found. Please try again.",
-            type: "error",
-          },
-        ]);
-        return;
-      }
-
-      if (userDocSnap.data().uid !== user.uid) {
-        setToasts((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(),
-            message: "Unauthorized: You can only update your own profile.",
-            type: "error",
-          },
-        ]);
-        return;
-      }
-
-      const updateData = {};
-      let processedValue = null;
-
-      if (type === "linkedin") {
-        if (value && value.trim()) {
-          let linkedinUrl = value.trim();
-          if (
-            !linkedinUrl.startsWith("http://") &&
-            !linkedinUrl.startsWith("https://")
-          ) {
-            linkedinUrl = "https://" + linkedinUrl;
-          }
-          processedValue = linkedinUrl;
-        }
-        updateData.linkedinUrl = processedValue;
-      } else if (type === "instagram") {
-        if (value && value.trim()) {
-          processedValue = value.trim().replace(/^@/, "");
-        }
-        updateData.instagramHandle = processedValue;
-      } else if (type === "discord") {
-        if (value && value.trim()) {
-          processedValue = value.trim().replace(/^@/, "");
-        }
-        updateData.discordUsername = processedValue;
-      }
-
-      updateData.updatedAt = new Date().toISOString();
-
-      const batch = writeBatch(db);
-      batch.update(userRef, updateData);
-      await batch.commit();
-
-      const updatedUserDoc = await getDoc(userRef);
-      const updatedData = updatedUserDoc.exists()
-        ? updatedUserDoc.data()
-        : null;
-
-      setLocalSocialLinks((prev) => ({
-        ...prev,
-        [type === "linkedin"
-          ? "linkedinUrl"
-          : type === "instagram"
-            ? "instagramHandle"
-            : "discordUsername"]: processedValue,
-      }));
-
-      if (setUserData && updatedData) {
-        setUserData((prev) => ({
-          ...prev,
-          ...updatedData,
-        }));
-      }
-
-      setEditingSocial(null);
-      setEditValue("");
-
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: `${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`,
-          type: "success",
-        },
-      ]);
-    } catch (err) {
-      console.error("Error updating social link:", err);
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: `Failed to update ${type}. Please try again.`,
-          type: "error",
-        },
-      ]);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handlePrivateSyncToggle = async () => {
-    if (!user) return;
-    try {
-      const isEnabling = !userData?.privateRepoSyncEnabled;
-      const userRef = doc(db, "users", user.uid);
-
-      const batch = writeBatch(db);
-      batch.update(userRef, { privateRepoSyncEnabled: isEnabling });
-      await batch.commit();
-
-      if (setUserData) {
-        setUserData((prev) => ({
-          ...prev,
-          privateRepoSyncEnabled: isEnabling,
-        }));
-      }
-
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: isEnabling
-            ? "Private repository sync enabled!"
-            : "Private repository sync disabled.",
-          type: "success",
-        },
-      ]);
-    } catch (err) {
-      console.error("Toggle sync error:", err);
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: "Failed to update sync preferences. Please try again.",
-          type: "error",
-        },
-      ]);
-    }
-  };
-
-  const totalPoints = userData?.points?.totalPoints || 0;
-  const gitRankPoints = userData?.points?.gitRankPoints || 0;
-  const referralPoints = userData?.points?.referralPoints || 0;
-  const streakPoints = userData?.points?.streakPoints || 0;
-  const codingVersePoints = userData?.points?.codingVersePoints || 0;
-  const streak = userData?.streak ?? 0;
-  const pointsEngines = [
-    { label: "GitRank Points", value: gitRankPoints, color: "bg-blue-500" },
-    {
-      label: "CodingVerse Points",
-      value: codingVersePoints,
-      color: "bg-purple-500",
-    },
-    { label: "Streak Points", value: streakPoints, color: "bg-orange-500" },
-    {
-      label: "Referral Points",
-      value: referralPoints,
-      color: "bg-emerald-500",
-    },
-  ];
-  const earnedPointsTotal = pointsEngines.reduce(
-    (sum, engine) => sum + Math.max(engine.value, 0),
-    0,
-  );
-
-  const getGithubIntensityColor = (intensity) => {
-    switch (intensity) {
-      case 4:
-        return "bg-emerald-600 dark:bg-emerald-500";
-      case 3:
-        return "bg-emerald-500/80 dark:bg-emerald-500/80";
-      case 2:
-        return "bg-emerald-400/60 dark:bg-emerald-400/60";
-      case 1:
-        return "bg-emerald-300/40 dark:bg-emerald-300/40";
-      default:
-        return "bg-slate-100 dark:bg-slate-800/50";
-    }
-  };
-
-  const getPlatformIntensityColor = (intensity) => {
-    switch (intensity) {
-      case 4:
-        return "bg-violet-600 dark:bg-violet-500";
-      case 3:
-        return "bg-violet-500/80 dark:bg-violet-500/80";
-      case 2:
-        return "bg-violet-400/60 dark:bg-violet-400/60";
-      case 1:
-        return "bg-violet-300/40 dark:bg-violet-300/40";
-      default:
-        return "bg-slate-100 dark:bg-slate-800/50";
-    }
-  };
-
-  const DiscordIcon = ({ className }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.21.3753-.444.8643-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.163-.3852-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C2.5092 7.7761 1.862 11.0615 2.183 14.3025a.074.074 0 0 0 .0283.0479 19.9411 19.9411 0 0 0 6.0017 2.9829.0766.0766 0 0 0 .0791-.022c.4616-.6257.8731-1.2855 1.231-1.9798a.0745.0745 0 0 0-.041-.105c-.6486-.2477-1.2671-.5545-1.8551-.9069a.074.074 0 0 1-.025-.0968.074.074 0 0 1 .0959-.0291c.123.0769.2437.1567.3616.2393a12.5958 12.5958 0 0 0 7.6554 0c.1179-.0826.2387-.1624.3616-.2393a.074.074 0 0 1 .096.0288.074.074 0 0 1-.025.097c-.588.3524-1.2065.6592-1.8551.9069a.0745.0745 0 0 0-.041.105c.3579.6943.7694 1.3541 1.231 1.9798a.076.076 0 0 0 .0791.022 19.94 19.94 0 0 0 6.0017-2.9829.074.074 0 0 0 .0283-.0479c.379-3.7757-.607-7.0224-2.538-10.0367a.069.069 0 0 0-.032-.0278zM8.4966 12.5148c-1.182 0-2.148-1.0903-2.148-2.427s.955-2.427 2.148-2.427c1.192 0 2.158 1.0903 2.148 2.427 0 1.3367-.956 2.427-2.148 2.427zm6.999 0c-1.182 0-2.148-1.0903-2.148-2.427s.955-2.427 2.148-2.427c1.192 0 2.158 1.0903 2.148 2.427 0 1.3367-.956 2.427-2.148 2.427z" />
-    </svg>
-  );
-
-  const profileStats = [
-    {
-      label: "XP Points",
-      value: totalPoints.toLocaleString(),
-      detail: "Total Earned XP",
-    },
-    {
-      label: "Git Rank",
-      value: rank,
-      detail:
-        rank === "Loading..."
-          ? "Calculating..."
-          : "Global leaderboard position",
-    },
-    {
-      label: "Active Streak",
-      value: `${streak} Day${streak !== 1 ? "s" : ""}`,
-      detail: "Consecutive daily logins",
-    },
-    {
-      label: "Invites Shared",
-      value: `${Math.floor(referralPoints / 100)} Used`,
-      detail: "Referral code successes",
-    },
-  ];
-
-  const socialLinks = [
-    {
-      id: "github",
-      name: "GitHub",
-      icon: Github,
-      hasLink: !!userData?.githubUsername,
-      link: `https://github.com/${userData?.githubUsername || ""}`,
-      color: "hover:bg-slate-100 dark:hover:bg-slate-800",
-      textColor: "text-slate-500",
-      isClickable: true,
-      showAddButton: false,
-    },
-    {
-      id: "email",
-      name: "Email",
-      icon: Mail,
-      hasLink: !!(userData?.email || user?.email),
-      link: `mailto:${userData?.email || user?.email}`,
-      color: "hover:bg-blue-500/10 hover:text-blue-500",
-      textColor: "text-slate-500",
-      isClickable: true,
-      showAddButton: false,
-    },
-    {
-      id: "linkedin",
-      name: "LinkedIn",
-      icon: Linkedin,
-      hasLink: !!localSocialLinks.linkedinUrl,
-      link: localSocialLinks.linkedinUrl,
-      value: localSocialLinks.linkedinUrl,
-      color: "hover:bg-indigo-500/10 hover:text-indigo-600",
-      textColor: "text-slate-500",
-      placeholder: "LinkedIn URL or profile ID",
-      type: "url",
-    },
-    {
-      id: "instagram",
-      name: "Instagram",
-      icon: Instagram,
-      hasLink: !!localSocialLinks.instagramHandle,
-      link: localSocialLinks.instagramHandle
-        ? `https://instagram.com/${localSocialLinks.instagramHandle}`
-        : null,
-      value: localSocialLinks.instagramHandle,
-      color: "hover:bg-pink-500/10 hover:text-pink-500",
-      textColor: "text-slate-500",
-      placeholder: "@username or username",
-      type: "username",
-    },
-    {
-      id: "discord",
-      name: "Discord",
-      icon: DiscordIcon,
-      hasLink: !!localSocialLinks.discordUsername,
-      link: getDiscordProfileUrl(localSocialLinks.discordUsername),
-      value: localSocialLinks.discordUsername,
-      color: "hover:bg-indigo-500/10 hover:text-indigo-600",
-      textColor: "text-slate-500",
-      placeholder: "Discord user ID",
-      type: "username",
-    },
-  ];
-
-  const renderSocialButton = (social) => {
-    const isEditing = editingSocial === social.id;
-    const hasData = social.hasLink;
-    const displayValue = social.value;
-
-    if (isEditing) {
-      return (
-        <div className="flex items-center gap-2 p-1 bg-white dark:bg-slate-800 rounded-xl border border-violet-500/30 shadow-lg">
-          <input
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            placeholder={social.placeholder}
-            className="px-3 py-1.5 text-sm bg-transparent border-none focus:outline-none text-slate-900 dark:text-white w-48"
-            autoFocus
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                handleUpdateSocialLink(social.id, editValue);
-              }
-            }}
-          />
-          <button
-            onClick={() => handleUpdateSocialLink(social.id, editValue)}
-            disabled={updating}
-            aria-label={`Save ${social.name} link`}
-            className="p-1.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 transition-colors disabled:opacity-50"
-          >
-            <Save className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => {
-              setEditingSocial(null);
-              setEditValue("");
-            }}
-            aria-label={`Cancel editing ${social.name} link`}
-            className="p-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 hover:bg-slate-300 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      );
-    }
-
-    if (social.id === "github" || social.id === "email") {
-      return (
-        
-          href={social.link}
-          target={social.id === "email" ? "_self" : "_blank"}
-          rel="noreferrer"
-          className={`p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm ${social.textColor} transition-all ${social.color} flex items-center gap-2 group`}
-          title={social.name}
-        >
-          <social.icon className="w-4 h-4" />
-          <span className="text-xs font-medium hidden sm:inline">
-            {social.name}
-          </span>
-        </a>
-      );
-    }
-
-    if (hasData) {
-      return (
-        <div className="relative group">
-          {social.link ? (
-            
-              href={social.link}
-              target="_blank"
-              rel="noreferrer"
-              className={`p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm ${social.textColor} transition-all ${social.color} flex items-center gap-2`}
-              title={displayValue}
-            >
-              <social.icon className="w-4 h-4" />
-              <span className="text-xs font-medium hidden sm:inline">
-                {social.name}
-              </span>
-            </a>
-          ) : (
-            <div
-              className={`p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm ${social.textColor} transition-all ${social.color} flex items-center gap-2 cursor-default`}
-              title={displayValue}
-            >
-              <social.icon className="w-4 h-4" />
-              <span className="text-xs font-medium hidden sm:inline">
-                {social.name}
-              </span>
-            </div>
-          )}
-          {isOwnProfile && (
-            <button
-              onClick={() => {
-                setEditingSocial(social.id);
-                setEditValue(displayValue || "");
-              }}
-              aria-label={`Edit ${social.name}`}
-              className="absolute -top-1 -right-1 p-0.5 rounded-full bg-violet-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-              title={`Edit ${social.name}`}
-            >
-              <Edit2 className="w-2.5 h-2.5" />
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    if (!isOwnProfile) return null;
-
-    return (
-      <button
-        onClick={() => {
-          setEditingSocial(social.id);
-          setEditValue("");
-        }}
-        className="p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 hover:text-violet-500 hover:border-violet-500/50 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all flex items-center gap-2 group"
-      >
-        <Plus className="w-4 h-4" />
-        <span className="text-xs font-medium hidden sm:inline">
-          Add {social.name}
-        </span>
-      </button>
-    );
   };
 
   if (loadingPublicProfile) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader />
+      <div className="flex h-96 items-center justify-center">
+        <Loader size="lg" />
       </div>
     );
   }
 
-  if (!userData) {
+  if (!userData && !loadingPublicProfile) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-          Profile not found
-        </h2>
-        <p className="text-slate-500 mt-2">
-          The developer you are looking for does not exist.
+      <div className="mx-auto max-w-4xl py-12 text-center">
+        <h2 className="text-2xl font-bold text-white">Profile Not Found</h2>
+        <p className="mt-2 text-slate-400">
+          The requested user profile does not exist or has been removed.
         </p>
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="mt-6 rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500"
+        >
+          Go Back Home
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <SectionHeader
-        title={
-          isOwnProfile
-            ? "Developer Profile"
-            : `${userData?.name || "Developer"}'s Profile`
-        }
-        subtitle={
-          isOwnProfile
-            ? "Manage your public links, view achievements, and review earned badges."
-            : `View ${userData?.name || "this developer"}'s achievements and badges.`
-        }
-        badge="Verified Account"
-        badgeColor="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-      >
-        {isOwnProfile && (
-          <>
-            <GradientButton
-              onClick={handleOpenEditModal}
-              variant="secondary"
-              className="py-2.5 px-4 text-xs"
-            >
-              Edit Profile
-            </GradientButton>
-            <GradientButton
-              onClick={handleShareProfile}
-              className="py-2.5 px-4 text-xs"
-            >
-              {copied ? "Code Copied!" : "Copy Referral Code"}
-            </GradientButton>
-            <GradientButton
-              onClick={handleDownloadProfileCard}
-              className="py-2.5 px-4 text-xs"
-            >
-              Download Profile Card
-            </GradientButton>
-            <GradientButton
-              onClick={() => navigate("/dashboard/profile/card-builder")}
-              className="py-2.5 px-4 text-xs bg-gradient-to-r from-blue-500 to-indigo-500"
-            >
-              Build GitHub DevCard
-            </GradientButton>
-          </>
-        )}
-        <GradientButton
-          onClick={handleSharePublicProfile}
-          variant="secondary"
-          className="py-2.5 px-4 text-xs flex items-center gap-1.5"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-          Share Profile
-        </GradientButton>
-        <GradientButton
-          onClick={() => setIsEmbedModalOpen(true)}
-          variant="secondary"
-          className="py-2.5 px-4 text-xs flex items-center gap-1.5"
-        >
-          <Code className="w-3.5 h-3.5" />
-          Embed
-        </GradientButton>
-      </SectionHeader>
-
-      <Card
-        ref={profileCardRef}
-        className="p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-8 border-slate-200/50 dark:border-slate-800/50"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative w-32 h-32 flex-shrink-0">
-          <div className="w-full h-full rounded-2xl overflow-hidden ring-4 ring-violet-500/20 shadow-xl">
+    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
+      {/* Profile Header / Card */}
+      <Card ref={profileCardRef} className="relative overflow-hidden p-6 md:p-8">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col items-center gap-6 sm:flex-row">
             <img
-              src={
-                userData?.avatar ||
-                user?.photoURL ||
-                "https://avatars.githubusercontent.com/u/9919?v=4"
-              }
-              alt="Profile Avatar"
-              className="w-full h-full object-cover"
+              src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"}
+              alt={userData?.name || "User Avatar"}
+              className="h-24 w-24 rounded-2xl border-2 border-indigo-500/30 object-cover shadow-lg"
             />
-          </div>
-          <span className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-xs text-white shadow-md animate-pulse">
-            🔥
-          </span>
-        </div>
-
-        <div className="flex-1 space-y-4 text-center md:text-left">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white my-0">
-                {userData?.name || "Developer"}
-              </h2>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                RankerHub PRO
-              </span>
-            </div>
-            <span className="text-sm font-bold text-slate-400 dark:text-slate-500 block">
-              @{userData?.githubUsername || "developer"} •{" "}
-              {userData?.college || "Mumbai College"}
-            </span>
-          </div>
-
-          <p className="text-slate-500 dark:text-slate-400 text-sm max-w-2xl leading-relaxed font-medium">
-            Verified RankerHub platform developer. Actively syncing repository
-            activity to scale the leaderboard, sharing referral tokens, and
-            resolving daily algorithmic arena challenges. ☕
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 text-xs font-bold text-slate-400">
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4 text-slate-400" />{" "}
-              {userData?.city || "Mumbai"}, India
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4 text-slate-400" /> Joined{" "}
-              {userData?.createdAt
-                ? new Date(userData.createdAt).toLocaleDateString(undefined, {
-                    month: "long",
-                    year: "numeric",
-                  })
-                : "May 2026"}
-            </span>
-            {isOwnProfile && (
-              <span className="flex items-center gap-1 text-violet-500">
-                🎫 Referral Code:{" "}
-                <span className="font-extrabold bg-violet-500/10 px-2 py-0.5 rounded-full select-all">
-                  {userData?.referralCode || "N/A"}
+            <div className="text-center sm:text-left">
+              <div className="flex items-center justify-center gap-2 sm:justify-start">
+                <h1 className="text-2xl font-bold text-white md:text-3xl">
+                  {userData?.name || "Developer"}
+                </h1>
+                {isOwnProfile && (
+                  <button
+                    type="button"
+                    onClick={handleOpenEditModal}
+                    aria-label="Edit Profile"
+                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <p className="text-sm font-medium text-indigo-400">
+                @{userData?.githubUsername || "developer"}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 sm:justify-start">
+                <span className="flex items-center gap-1">
+                  <Building2 className="h-3.5 w-3.5" />
+                  {userData?.college || "College Not Specified"}
                 </span>
-              </span>
-            )}
-          </div>
-
-          <div className="flex justify-center md:justify-start items-center gap-3 pt-2 flex-wrap">
-            {socialLinks.map((social) => (
-              <div key={social.id}>{renderSocialButton(social)}</div>
-            ))}
-          </div>
-
-          {/* ✅ Report User Button - only visible to logged-in users on other people's profiles */}
-          {!isOwnProfile && user && (
-            <div className="flex justify-center md:justify-start mt-2">
-              <button
-                onClick={() => setShowReport(true)}
-                className="text-red-500 border border-red-300 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-sm font-semibold transition-colors"
-              >
-                🚩 Report User
-              </button>
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {userData?.city || "City Not Specified"}
+                </span>
+              </div>
             </div>
-          )}
+          </div>
 
-          {/* ✅ Report Modal */}
-          {showReport && (
-            <ReportModal
-              reportedUid={publicProfile?.uid}
-              reporterUid={user?.uid}
-              onClose={() => setShowReport(false)}
-              toast={{
-                success: (msg) =>
-                  setToasts((prev) => [
-                    ...prev,
-                    {
-                      id: Date.now() + Math.random(),
-                      message: msg,
-                      type: "success",
-                    },
-                  ]),
-                error: (msg) =>
-                  setToasts((prev) => [
-                    ...prev,
-                    {
-                      id: Date.now() + Math.random(),
-                      message: msg,
-                      type: "error",
-                    },
-                  ]),
-              }}
-            />
-          )}
-
-          <div className="fixed bottom-6 right-5 z-50 flex flex-col gap-2 w-80">
-            <AnimatePresence>
-              {toasts.map((toast) => (
-                <Toast
-                  key={toast.id}
-                  message={toast.message}
-                  type={toast.type}
-                  onClose={() =>
-                    setToasts((prev) => prev.filter((t) => t.id !== toast.id))
-                  }
-                />
-              ))}
-            </AnimatePresence>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <GradientButton
+              type="button"
+              onClick={handleSharePublicProfile}
+              aria-label="Share Profile Link"
+              className="flex items-center gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </GradientButton>
+            <button
+              type="button"
+              onClick={() => setIsEmbedModalOpen(true)}
+              aria-label="Get Embed Code"
+              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700"
+            >
+              <Code className="h-4 w-4" />
+              Embed
+            </button>
           </div>
         </div>
       </Card>
 
-      {isOwnProfile && (
-        <Card className="mb-6 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-slate-200/50 dark:border-slate-800/50">
-          <div>
-            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-              <Github className="w-5 h-5 text-slate-700 dark:text-slate-300" />{" "}
-              Private Repository Sync
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-              Enable indexing for private repositories to earn points for your
-              private commits, PRs, and reviews.
-            </p>
-          </div>
-
-          <button
-            onClick={handlePrivateSyncToggle}
-            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 flex-shrink-0 ${
-              userData?.privateRepoSyncEnabled
-                ? "bg-violet-500"
-                : "bg-slate-300 dark:bg-slate-700"
-            }`}
-            role="switch"
-            aria-checked={userData?.privateRepoSyncEnabled}
-          >
-            <span className="sr-only">Enable Private Repo Sync</span>
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                userData?.privateRepoSyncEnabled
-                  ? "translate-x-8"
-                  : "translate-x-1"
-              }`}
-            />
-          </button>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {profileStats.map((stat, idx) => (
-          <Card
-            key={idx}
-            className="p-5 text-center flex flex-col items-center justify-center border-slate-200/50 dark:border-slate-800/50"
-          >
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              {stat.label}
-            </span>
-            <span className="block text-2xl md:text-3xl font-black text-slate-900 dark:text-white leading-none">
-              {stat.value}
-            </span>
-            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-1 block">
-              {stat.detail}
-            </span>
-          </Card>
+      {/* Toast Notifications */}
+      <div className="fixed bottom-4 right-4 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <Toast key={toast.id} message={toast.message} type={toast.type} />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
-            <div>
-              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-                <Github className="w-5 h-5 text-emerald-500" /> GitHub Activity
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Verified repository commits over the last 16 weeks.
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="block text-xl font-black text-slate-900 dark:text-white leading-none">
-                {githubHeatmap.total.toLocaleString()}
-              </span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
-                Total Commits
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-col items-start min-w-max flex-1">
-            <div className="flex gap-1">
-              <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
-                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">
-                  Mon
-                </span>
-                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">
-                  Wed
-                </span>
-                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">
-                  Fri
-                </span>
-              </div>
-
-              <div className="flex gap-1">
-                {githubHeatmap.grid.map((week, wIdx) => (
-                  <div key={`gh-${wIdx}`} className="flex flex-col gap-1">
-                    {week.map((day, dIdx) => (
-                      <div
-                        key={`gh-${wIdx}-${dIdx}`}
-                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getGithubIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                        title={`${day.count > 0 ? day.count : "No"} commits${day.date ? ` on ${day.date}` : ""}`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-auto pt-4 flex items-center justify-end w-full gap-2 text-[10px] font-bold text-slate-400">
-              <span>Less</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-sm bg-slate-100 dark:bg-slate-800/50" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-300/40 dark:bg-emerald-300/40" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-400/60 dark:bg-emerald-400/60" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-500/80 dark:bg-emerald-500/80" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-600 dark:bg-emerald-500" />
-              </div>
-              <span>More</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 overflow-x-auto flex flex-col">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 min-w-max">
-            <div>
-              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-violet-500" /> Platform Activity
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Internal interactions, check-ins, and CodingVerse solves.
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="block text-xl font-black text-slate-900 dark:text-white leading-none">
-                {platformHeatmap.total.toLocaleString()}
-              </span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
-                Platform Events
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-col items-start min-w-max flex-1">
-            <div className="flex gap-1">
-              <div className="grid grid-rows-7 gap-1 pr-2 text-[9px] font-bold text-slate-400">
-                <span className="row-start-2 h-3 sm:h-4 flex items-center justify-end">
-                  Mon
-                </span>
-                <span className="row-start-4 h-3 sm:h-4 flex items-center justify-end">
-                  Wed
-                </span>
-                <span className="row-start-6 h-3 sm:h-4 flex items-center justify-end">
-                  Fri
-                </span>
-              </div>
-
-              <div className="flex gap-1">
-                {platformHeatmap.grid.map((week, wIdx) => (
-                  <div key={`plat-${wIdx}`} className="flex flex-col gap-1">
-                    {week.map((day, dIdx) => (
-                      <div
-                        key={`plat-${wIdx}-${dIdx}`}
-                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm ${getPlatformIntensityColor(day.intensity)} transition-colors hover:ring-2 ring-slate-400/50 cursor-crosshair`}
-                        title={`${day.count > 0 ? day.count : "No"} interactions${day.date ? ` on ${day.date}` : ""}`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-auto pt-4 flex items-center justify-end w-full gap-2 text-[10px] font-bold text-slate-400">
-              <span>Less</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-sm bg-slate-100 dark:bg-slate-800/50" />
-                <div className="w-3 h-3 rounded-sm bg-violet-300/40 dark:bg-violet-300/40" />
-                <div className="w-3 h-3 rounded-sm bg-violet-400/60 dark:bg-violet-400/60" />
-                <div className="w-3 h-3 rounded-sm bg-violet-500/80 dark:bg-violet-500/80" />
-                <div className="w-3 h-3 rounded-sm bg-violet-600 dark:bg-violet-500" />
-              </div>
-              <span>More</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
-          <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
-              GitHub Audit Snapshot
-            </h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              Verified counts fetched once on onboarding to set GitRank points
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 my-6">
-            <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
-              <div className="text-2xl mb-1">📝</div>
-              <div>
-                <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
-                  {userData?.githubStats?.commits || 0}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
-                  Commits
-                </span>
-              </div>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
-              <div className="text-2xl mb-1">📁</div>
-              <div>
-                <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
-                  {userData?.githubStats?.repos || 0}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
-                  Repositories
-                </span>
-              </div>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
-              <div className="text-2xl mb-1">⭐</div>
-              <div>
-                <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
-                  {userData?.githubStats?.stars || 0}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
-                  Stars Earned
-                </span>
-              </div>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-200/40 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-950/20">
-              <div className="text-2xl mb-1">👥</div>
-              <div>
-                <span className="block text-lg font-black text-slate-900 dark:text-white leading-tight">
-                  {userData?.githubStats?.followers || 0}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 block">
-                  Followers
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-            <span>
-              Points mapping: Commits(+2) Repos(+5) Stars(+3) Followers(+2)
-            </span>
-            <span className="text-violet-600 dark:text-violet-400 font-bold">
-              {gitRankPoints} GitPoints
-            </span>
-          </div>
-        </Card>
-
-        <Card className="p-6 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
-          <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
-              Points Engine Breakdown
-            </h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              Multi-engine ratings tracking points distributions
-            </p>
-          </div>
-
-          <div className="my-6 space-y-3.5">
-            {[
-              ...pointsEngines.map((engine) => ({
-                ...engine,
-                max: totalPoints || 1,
-              })),
-              {
-                label: "Total Points",
-                value: totalPoints,
-                max: totalPoints || 1,
-                isTotal: true,
-              },
-            ].map((engine, idx) => {
-              const pct = Math.floor((engine.value / engine.max) * 100) || 0;
-              return (
-                <div
-                  key={idx}
-                  className={`space-y-1 ${engine.isTotal ? "pt-2 border-t border-slate-100 dark:border-slate-800 mt-2" : ""}`}
-                >
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span
-                      className={
-                        engine.isTotal
-                          ? "text-violet-600 dark:text-violet-400"
-                          : "text-slate-500"
-                      }
-                    >
-                      {engine.label}
-                    </span>
-                    <span
-                      className={
-                        engine.isTotal
-                          ? "text-slate-900 dark:text-white"
-                          : "text-slate-500"
-                      }
-                    >
-                      {engine.value} pts
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
-                    {engine.isTotal ? (
-                      <div className="flex h-full w-full">
-                        {pointsEngines.map((segment) => {
-                          const segmentPct = earnedPointsTotal
-                            ? (Math.max(segment.value, 0) / earnedPointsTotal) *
-                              100
-                            : 0;
-
-                          return (
-                            <div
-                              key={segment.label}
-                              className={`h-full ${segment.color} transition-all duration-300`}
-                              style={{ width: `${segmentPct}%` }}
-                              title={`${segment.label}: ${Math.round(segmentPct)}%`}
-                              aria-label={`${segment.label}: ${Math.round(segmentPct)}% of total points`}
-                            />
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div
-                        className={`h-full ${engine.color} rounded-full transition-all duration-300`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-bold flex items-center justify-between">
-            <span>Aggregated Rating Score</span>
-            <span className="text-violet-600 dark:text-violet-400 font-extrabold text-xs">
-              {totalPoints} TotalPoints
-            </span>
-          </div>
-        </Card>
-      </div>
-
-      {/* Trust Score Scorecard */}
-      {(() => {
-        const trustScore = userData?.points?.trustScore ?? null;
-
-        // Tier derivation mirrors trustScoreService.getTrustTier
-        let tier = {
-          label: "Not Synced",
-          color: "text-slate-400",
-          badgeBg: "bg-slate-500/10 border-slate-500/20",
-          description: "Sync your GitHub data to calculate your Trust Score.",
-        };
-        if (trustScore !== null) {
-          if (trustScore >= 90)
-            tier = {
-              label: "High Trust",
-              color: "text-emerald-500",
-              badgeBg: "bg-emerald-500/10 border-emerald-500/20",
-              description:
-                "Outstanding contribution quality, active peer code reviews, and strong open-source presence.",
-            };
-          else if (trustScore >= 70)
-            tier = {
-              label: "Verified",
-              color: "text-blue-500",
-              badgeBg: "bg-blue-500/10 border-blue-500/20",
-              description:
-                "Consistent, legitimate activities across multiple public repositories with clear documentation.",
-            };
-          else if (trustScore >= 50)
-            tier = {
-              label: "Basic",
-              color: "text-slate-500",
-              badgeBg: "bg-slate-500/10 border-slate-500/20",
-              description:
-                "Initial ranking signal. Contributions are valid but concentrated in self-owned repositories.",
-            };
-          else
-            tier = {
-              label: "Low Trust",
-              color: "text-amber-500",
-              badgeBg: "bg-amber-500/10 border-amber-500/20",
-              description:
-                "Suspicious commit frequency, low-content messages, or repetitive commit triggers detected.",
-            };
-        }
-
-        const scoreSegments = [
-          { label: "PR Merge Rate", emoji: "🔀", positive: true, max: 15 },
-          { label: "Code Reviews", emoji: "🔍", positive: true, max: 10 },
-          {
-            label: "External Contributions",
-            emoji: "🌐",
-            positive: true,
-            max: 15,
-          },
-          {
-            label: "Community Appreciation",
-            emoji: "⭐",
-            positive: true,
-            max: 10,
-          },
-          {
-            label: "Low-content Commits",
-            emoji: "⚠️",
-            positive: false,
-            max: 15,
-          },
-          { label: "Repeated Commits", emoji: "🔁", positive: false, max: 10 },
-          {
-            label: "Activity Concentration",
-            emoji: "🎯",
-            positive: false,
-            max: 5,
-          },
-        ];
-
-        return (
-          <div className="mb-0">
-            <Card className="p-6 border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-br from-violet-600/5 via-transparent to-blue-500/5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-violet-500" />{" "}
-                    Developer Trust Score
-                  </h3>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                    Quality-based ranking signal — evaluates contribution
-                    impact, not just volume.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right">
-                    <span
-                      className={`block text-4xl font-black leading-none ${tier.color}`}
-                    >
-                      {trustScore !== null ? trustScore : "—"}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase mt-1 block">
-                      out of 100
-                    </span>
-                  </div>
-                  <span
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-black ${tier.badgeBg} ${tier.color}`}
-                  >
-                    {tier.label}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-1">
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">
-                  {tier.description}
-                </p>
-
-                {/* Score bar: base (50) + positives fills left, deductions eat from right */}
-                <div className="mt-4">
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1.5">
-                    <span>Score Composition</span>
-                    <span>
-                      {trustScore !== null ? `${trustScore}/100` : "—"}
-                    </span>
-                  </div>
-                  <div className="w-full h-3 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden flex">
-                    {trustScore !== null && (
-                      <>
-                        {/* Filled portion */}
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{
-                            width: `${trustScore}%`,
-                            background:
-                              trustScore >= 90
-                                ? "linear-gradient(90deg,#10b981,#34d399)"
-                                : trustScore >= 70
-                                  ? "linear-gradient(90deg,#3b82f6,#60a5fa)"
-                                  : trustScore >= 50
-                                    ? "linear-gradient(90deg,#6366f1,#818cf8)"
-                                    : "linear-gradient(90deg,#f59e0b,#fbbf24)",
-                          }}
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Signal breakdown table */}
-                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">
-                  {scoreSegments.map((seg, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between text-xs"
-                    >
-                      <span className="flex items-center gap-1.5 font-semibold text-slate-500">
-                        <span>{seg.emoji}</span>
-                        {seg.label}
-                      </span>
-                      <span
-                        className={`font-bold text-[10px] px-1.5 py-0.5 rounded ${
-                          seg.positive
-                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                            : "text-red-500 dark:text-red-400 bg-red-500/10"
-                        }`}
-                      >
-                        {seg.positive ? `+${seg.max} max` : `-${seg.max} max`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="mt-4 text-[10px] text-slate-400 font-semibold border-t border-slate-100 dark:border-slate-800 pt-3">
-                  Base score: 50 pts · Sync your GitHub data to refresh this
-                  score. Trust Score is an additional signal and does not
-                  replace GitRank points.
-                </p>
-              </div>
-            </Card>
-          </div>
-        );
-      })()}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 flex flex-col justify-between border-slate-200/50 dark:border-slate-800/50">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
-                Badge Achievements Case
-              </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
-                Unlock specialized ratings badges by hitting milestones.
-              </p>
-            </div>
-            <Award className="w-5 h-5 text-violet-500" />
-          </div>
-
-          {/* Issue #617: Badge sort controls */}
-          {isOwnProfile && (
-            <div className="flex items-center gap-2 mt-4 mb-2 flex-wrap">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sort:</span>
-              {["Default", "Unlocked First", "Locked First"].map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => setBadgeSort(opt)}
-                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
-                    badgeSort === opt
-                      ? "bg-violet-600 border-violet-600 text-white"
-                      : "border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
-            {[...systemBadges].sort((a, b) => {
-              const aUnlocked = a.id === "b1" || (a.id === "b2" && gitRankPoints >= 100) || (a.id === "b3" && streak >= 10) || (a.id === "b4" && codingVersePoints >= 100) || (a.id === "b5" && referralPoints >= 1000);
-              const bUnlocked = b.id === "b1" || (b.id === "b2" && gitRankPoints >= 100) || (b.id === "b3" && streak >= 10) || (b.id === "b4" && codingVersePoints >= 100) || (b.id === "b5" && referralPoints >= 1000);
-              if (badgeSort === "Unlocked First") return aUnlocked === bUnlocked ? 0 : aUnlocked ? -1 : 1;
-              if (badgeSort === "Locked First") return aUnlocked === bUnlocked ? 0 : aUnlocked ? 1 : -1;
-              return 0;
-            }).map((badge) => {
-              let unlocked = false;
-              if (badge.id === "b1") unlocked = true;
-              if (badge.id === "b2" && gitRankPoints >= 100) unlocked = true;
-              if (badge.id === "b3" && streak >= 10) unlocked = true;
-              if (badge.id === "b4" && codingVersePoints >= 100)
-                unlocked = true;
-              if (badge.id === "b5" && referralPoints >= 1000) unlocked = true;
-
-              return (
-                <div
-                  key={badge.id}
-                  className={`
-                    relative overflow-hidden p-4 rounded-xl border flex items-center gap-3.5 group transition-all duration-300
-                    ${
-                      unlocked
-                        ? "border-violet-500/20 bg-slate-50/50 dark:bg-slate-950/20"
-                        : "border-slate-200/30 dark:border-slate-800/20 bg-slate-100/10 dark:bg-slate-950/5 opacity-50"
-                    }
-                  `}
-                >
-                  {unlocked && (
-                    <div className="absolute right-2 top-2 w-7 h-7 flex-shrink-0 opacity-80 group-hover:scale-110 transition-transform">
-                      <LottiePlayer
-                        animationData={successTick}
-                        loop={false}
-                        className="w-full h-full"
-                      />
-                    </div>
-                  )}
-
-                  <div
-                    className={`w-11 h-11 rounded-full bg-gradient-to-tr ${badge.color} text-white flex items-center justify-center font-black text-sm shadow-md`}
-                  >
-                    {badge.name.charAt(0)}
-                  </div>
-
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 dark:text-white leading-tight flex items-center gap-1">
-                      {badge.name}
-                      {!unlocked && (
-                        <span className="text-[8px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">
-                          Locked
-                        </span>
-                      )}
-                    </h4>
-                    <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
-                      {badge.description}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 font-bold text-center">
-            Dynamically unlocked based on verified database scores.
-          </div>
-        </Card>
-
-        <Card className="flex flex-col items-center justify-center p-8 text-center relative overflow-hidden bg-gradient-to-br from-violet-600/10 to-indigo-600/10 border-violet-500/15">
-          <div className="w-40 h-40 flex items-center justify-center mb-4">
-            <LottiePlayer
-              animationData={trophyAnimation}
-              loop={true}
-              className="w-full h-full"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <h3 className="font-extrabold text-slate-900 dark:text-white leading-tight my-0">
-              Community Champion
-            </h3>
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 max-w-[200px] block">
-              You are globally verified inside the top 1,000 developers.
-            </span>
-          </div>
-
-          <div className="mt-6 flex items-center gap-1 text-[10px] font-black text-violet-600 dark:text-violet-400 bg-white/70 dark:bg-slate-900/60 border border-violet-500/20 px-3 py-1 rounded-xl shadow-sm">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            RankerHub Verified Member
-          </div>
-        </Card>
-      </div>
-
-      {isOwnProfile && (
-        <Card className="border-slate-200/50 dark:border-slate-800/50">
-          <div className="p-8">
-            <RankingBreakdown userData={userData} />
-          </div>
-        </Card>
-      )}
-
+      {/* Edit Profile Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-profile-title"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                if (!updating) setIsEditModalOpen(false);
-              }}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl bg-slate-900/90 dark:bg-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl"
             >
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                aria-label="Close edit profile dialog"
-                className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
-                disabled={updating}
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="space-y-1">
-                <h3 className="text-xl font-black text-white my-0 flex items-center gap-2">
-                  <User className="w-5 h-5 text-violet-500" /> Edit Developer
-                  Profile
-                </h3>
-                <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                  Update your display name, profile avatar, education, and
-                  onboarding details.
-                </p>
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h2 id="edit-profile-title" className="text-xl font-bold text-white">
+                  Edit Profile
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  aria-label="Close edit profile modal"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              <form onSubmit={handleSaveProfile} className="space-y-4">
+              <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
                 {editError && (
-                  <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span className="flex-1">{editError}</span>
+                  <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
+                    {editError}
                   </div>
                 )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <User className="w-3 h-3" /> Full Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your name"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <Image className="w-3 h-3" /> Avatar Image URL
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Avatar image URL"
-                      value={editAvatar}
-                      onChange={(e) => setEditAvatar(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400">Full Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <HelpCircle className="w-3 h-3" /> Gender
-                    </label>
-                    <select
-                      value={editGender}
-                      onChange={(e) => setEditGender(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
-                    >
-                      <option value="" disabled className="bg-slate-900">
-                        Select gender
-                      </option>
-                      <option value="male" className="bg-slate-900">
-                        Male
-                      </option>
-                      <option value="female" className="bg-slate-900">
-                        Female
-                      </option>
-                      <option value="non-binary" className="bg-slate-900">
-                        Non-Binary
-                      </option>
-                      <option
-                        value="prefer-not-to-say"
-                        className="bg-slate-900"
-                      >
-                        Prefer not to say
-                      </option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> Date of Birth
-                    </label>
-                    <input
-                      type="date"
-                      value={editDob}
-                      max={new Date().toISOString().split("T")[0]}
-                      onChange={(e) => setEditDob(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> City
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your city"
-                      value={editCity}
-                      onChange={(e) => setEditCity(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 relative" ref={editDropdownRef}>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <Building2 className="w-3 h-3" /> Mumbai College
-                    </label>
-
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="Type to filter Mumbai colleges..."
-                        value={collegeSearch}
-                        onFocus={() => setShowCollegeDropdown(true)}
-                        onChange={(e) => {
-                          setCollegeSearch(e.target.value);
-                          setShowCollegeDropdown(true);
-                        }}
-                        className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all ${
-                          editCollege && editCollege !== "Other"
-                            ? "border-violet-500 bg-violet-950/20 text-violet-400 font-semibold"
-                            : "border-slate-800 bg-slate-950/40 text-white"
-                        }`}
-                      />
-                    </div>
-
-                    <AnimatePresence>
-                      {showCollegeDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 8 }}
-                          className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900 shadow-xl divide-y divide-slate-800"
-                        >
-                          {filteredColleges.length > 0 ? (
-                            filteredColleges.map((col) => (
-                              <button
-                                key={col}
-                                type="button"
-                                onClick={() => {
-                                  setEditCollege(col);
-                                  setCollegeSearch(col);
-                                  setShowCollegeDropdown(false);
-                                  if (col !== "Other") {
-                                    setCustomCollege("");
-                                  }
-                                }}
-                                className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 cursor-pointer font-medium transition-colors"
-                              >
-                                {col}
-                              </button>
-                            ))
-                          ) : (
-                            <div className="px-3 py-2 text-xs text-slate-500 text-center font-bold">
-                              No colleges match search filter.
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <AnimatePresence>
-                    {editCollege === "Other" && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-1.5"
-                      >
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Specify College Name
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter your college name"
-                          value={customCollege}
-                          onChange={(e) => setCustomCollege(e.target.value)}
-                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Bio */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    Bio
-                  </label>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400">Bio</label>
                   <textarea
-                    placeholder="Tell the community about yourself..."
                     value={editBio}
-                    maxLength={200}
                     onChange={(e) => setEditBio(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all resize-none"
+                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
                   />
-                  <p className="text-right text-[10px] text-slate-500 font-medium">{editBio.length}/200</p>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    Currently Learning
-                  </label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {(editLearningTags || []).map((tag, index) => (
-                      <span
-                        key={index}
-                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditLearningTags((prev) =>
-                              prev.filter((_, i) => i !== index),
-                            )
-                          }
-                          aria-label={`Remove ${tag} tag`}
-                          className="hover:text-red-400 transition-colors"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  {(editLearningTags || []).length < 5 && (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="e.g. Rust, DSA, System Design"
-                        value={learningInput}
-                        onChange={(e) => setLearningInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const val = learningInput.trim();
-                            if (
-                              val &&
-                              !(editLearningTags || []).includes(val)
-                            ) {
-                              setEditLearningTags((prev) => [
-                                ...(prev || []),
-                                val,
-                              ]);
-                              setLearningInput("");
-                            }
-                          }
-                        }}
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500 text-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const val = learningInput.trim();
-                          if (val && !(editLearningTags || []).includes(val)) {
-                            setEditLearningTags((prev) => [
-                              ...(prev || []),
-                              val,
-                            ]);
-                            setLearningInput("");
-                          }
-                        }}
-                        className="px-3 py-1 text-xs rounded-xl bg-violet-500 text-white hover:bg-violet-600 transition-colors"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  )}
-                  <p className="text-[10px] text-slate-500">
-                    Add up to 5 tags (press Enter or click Add)
-                  </p>
-                </div>
-                {/* Submit & Cancel Buttons */}
-                <div className="flex gap-3 pt-2">
+
+                <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="flex-1 py-2.5 text-xs font-bold rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
-                    disabled={updating}
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800"
                   >
                     Cancel
                   </button>
-                  <GradientButton
-                    type="submit"
-                    disabled={updating}
-                    className="flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2"
-                  >
+                  <GradientButton type="submit" disabled={updating}>
                     {updating ? "Saving..." : "Save Changes"}
                   </GradientButton>
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Embed Code Modal */}
       <AnimatePresence>
         {isEmbedModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="embed-modal-title"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsEmbedModalOpen(false)}
-              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-slate-900/90 dark:bg-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl p-6 text-slate-100 flex flex-col gap-6"
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl"
             >
-              <button
-                onClick={() => setIsEmbedModalOpen(false)}
-                aria-label="Close embed dialog"
-                className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="space-y-1">
-                <h3 className="text-xl font-black text-white my-0 flex items-center gap-2">
-                  <Code className="w-5 h-5 text-violet-500" /> Embed on GitHub
-                </h3>
-                <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                  Copy the Markdown snippet below to showcase your live
-                  RankerHub stats on your GitHub profile README.
-                </p>
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h2 id="embed-modal-title" className="text-xl font-bold text-white">
+                  Embed Profile Card
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsEmbedModalOpen(false)}
+                  aria-label="Close embed modal"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 rounded-xl blur opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-                <div className="relative bg-slate-950 rounded-xl p-4 border border-slate-800 overflow-x-auto">
-                  <code className="text-xs text-emerald-400 break-all select-all font-mono">
-                    {getEmbedMarkdown()}
-                  </code>
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-slate-400">
+                  Copy this Markdown snippet to embed your live RankerHub profile badge in your GitHub README or personal portfolio.
+                </p>
+                <div className="relative rounded-lg bg-slate-950 p-3 font-mono text-xs text-indigo-300">
+                  {getEmbedMarkdown()}
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyEmbed}
+                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy Markdown
+                  </button>
                 </div>
               </div>
-
-              <GradientButton
-                onClick={handleCopyEmbed}
-                className="w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
-              >
-                <Copy className="w-4 h-4" /> Copy Markdown Snippet
-              </GradientButton>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
