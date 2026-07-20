@@ -58,10 +58,11 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   // Real-time Firestore notification listener
   // Fixes #639: single stable listener per mounted instance, torn down cleanly on unmount/auth change
   useEffect(() => {
-    if (!user?.uid) {
-      setNotifications([]);
-      return undefined;
-    }
+  if (!user?.uid) {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing notifications on logout/no-user is a valid effect responsibility here
+    setNotifications([]);
+    return undefined;
+  }
 
     const notifRef = collection(db, "users", user.uid, "notifications");
     const q = query(notifRef, orderBy("createdAt", "desc"));
