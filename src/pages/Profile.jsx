@@ -1,29 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import ReportModal from "../components/ReportModal";
-import domtoimage from "dom-to-image-more";
 import { useParams, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import LottiePlayer from "../components/ui/LottiePlayer";
 import {
   MapPin,
-  Calendar,
   Award,
   ShieldCheck,
-  Mail,
   Edit2,
   X,
-  Save,
-  Plus,
-  User,
   Building2,
-  HelpCircle,
-  Search,
-  Image,
   AlertCircle,
-  Zap,
   Share2,
   Code,
   Copy,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import {
@@ -33,18 +22,13 @@ import {
   getCountFromServer,
   doc,
   getDoc,
-  writeBatch,
   updateDoc,
   getDocs,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import RankingBreakdown from "../components/dashboard/RankingBreakdown";
-import successTick from "../assets/animations/succes_tick.json";
-import trophyAnimation from "../assets/animations/trophy.json";
-import { systemBadges } from "../constants";
 import Card from "../components/ui/Card";
-import SectionHeader from "../components/ui/SectionHeader";
 import Loader from "../components/ui/Loader";
 import GradientButton from "../components/ui/GradientButton";
 import Toast from "../components/ui/Toast";
@@ -135,15 +119,11 @@ export const Profile = () => {
   }, [username, isOwnProfile, authUserData, user]);
 
   const userData = isOwnProfile ? authUserData : publicProfile;
-  const [copied, setCopied] = useState(false);
   const [rank, setRank] = useState("Loading...");
   const [toasts, setToasts] = useState([]);
-  const [editingSocial, setEditingSocial] = useState(null);
-  const [editValue, setEditValue] = useState("");
   const [updating, setUpdating] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [badgeSort, setBadgeSort] = useState("Default");
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
@@ -157,8 +137,7 @@ export const Profile = () => {
   const [customCollege, setCustomCollege] = useState("");
   const [editError, setEditError] = useState("");
 
-  const [editLearningTags, setEditLearningTags] = useState([]);
-  const [learningInput, setLearningInput] = useState("");
+  const [editLearningTags] = useState([]);
   const editDropdownRef = useRef(null);
   const profileCardRef = useRef(null);
 
@@ -173,14 +152,6 @@ export const Profile = () => {
     window.addEventListener("keydown", handleModalKeyDown);
     return () => window.removeEventListener("keydown", handleModalKeyDown);
   }, [isEditModalOpen, isEmbedModalOpen]);
-
-  // GitHub Real Heatmap State
-  const [githubHeatmap, setGithubHeatmap] = useState({
-    grid: Array.from({ length: 16 }, () =>
-      Array.from({ length: 7 }, () => ({ intensity: 0, date: "", count: 0 })),
-    ),
-    total: 0,
-  });
 
   const filteredColleges = useMemo(() => {
     if (collegeSearch.trim() === "" || collegeSearch === "Other") {
@@ -229,7 +200,6 @@ export const Profile = () => {
     }
 
     setEditError("");
-    setEditLearningTags(userData?.learningTags || []);
     setEditBio(userData?.bio || "");
     setIsEditModalOpen(true);
   };
@@ -361,12 +331,11 @@ export const Profile = () => {
 
   useEffect(() => {
     if (userData) {
-      setLocalSocialLinks((prev) => ({
-        ...prev,
+      setLocalSocialLinks({
         linkedinUrl: userData.linkedinUrl || null,
         instagramHandle: userData.instagramHandle || null,
         discordUsername: userData.discordUsername || null,
-      }));
+      });
     }
   }, [userData]);
 
@@ -406,204 +375,6 @@ export const Profile = () => {
 
     fetchRank();
   }, [userData, isOwnProfile, user]);
-
-  useEffect(() => {
-    const fetchGithubHeatmap = async () => {
-      const username = userData?.githubUsername;
-      if (!username) return;
-
-      try {
-        const res = await fetch(
-          `https://github-contributions-api.jogruber.de/v4/${username}?y=last`,
-        );
-        if (!res.ok) throw new Error("API Limit");
-
-        const data = await res.json();
-        const contributions = data.contributions || [];
-
-        const last112 = contributions.slice(-112);
-        let totalActivity = 0;
-        const grid = [];
-        let currentWeek = [];
-
-        const dateFormatter = new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        const todayMs = Date.now();
-
-        last112.forEach((day, index) => {
-          const c = day.count;
-          totalActivity += c;
-          let intensity = 0;
-
-          if (c > 9) intensity = 4;
-          else if (c > 5) intensity = 3;
-          else if (c > 2) intensity = 2;
-          else if (c > 0) intensity = 1;
-
-          let dateStr;
-          if (day.date) {
-            dateStr = dateFormatter.format(new Date(day.date));
-          } else {
-            const daysAgo = 111 - index;
-            dateStr = dateFormatter.format(todayMs - daysAgo * 86400000);
-          }
-
-          currentWeek.push({ intensity, date: dateStr, count: c });
-
-          if (currentWeek.length === 7) {
-            grid.push(currentWeek);
-            currentWeek = [];
-          }
-        });
-
-        if (grid.length < 16) {
-          const diff = 16 - grid.length;
-          for (let i = 0; i < diff; i++) {
-            grid.unshift(
-              Array.from({ length: 7 }, () => ({
-                intensity: 0,
-                date: "",
-                count: 0,
-              })),
-            );
-          }
-        }
-
-        setGithubHeatmap({ grid, total: totalActivity });
-      } catch (err) {
-        console.error("Profile heatmap fetch error:", err);
-        setGithubHeatmap({
-          grid: Array.from({ length: 16 }, () =>
-            Array.from({ length: 7 }, () => ({
-              intensity: 0,
-              date: "",
-              count: 0,
-            })),
-          ),
-          total: 0,
-        });
-      }
-    };
-
-    fetchGithubHeatmap();
-  }, [userData?.githubUsername]);
-
-  const platformHeatmap = useMemo(() => {
-    const logs = userData?.platformActivityLogs || [];
-    const weeks = 16;
-    const daysPerWeek = 7;
-    const data = [];
-    let activityTotal = 0;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const activityMap = {};
-    logs.forEach((log) => {
-      const d = new Date(log);
-      d.setHours(0, 0, 0, 0);
-      const key = d.getTime();
-      activityMap[key] = (activityMap[key] || 0) + 1;
-    });
-
-    const todayMs = today.getTime();
-    const dateFormatter = new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-
-    for (let w = 0; w < weeks; w++) {
-      const weekData = [];
-      for (let d = 0; d < daysPerWeek; d++) {
-        const daysAgo = (weeks - 1 - w) * daysPerWeek + (daysPerWeek - 1 - d);
-        const targetTime = todayMs - daysAgo * 86400000;
-
-        const count = activityMap[targetTime] || 0;
-        activityTotal += count;
-
-        let intensity = 0;
-        if (count > 9) intensity = 4;
-        else if (count > 5) intensity = 3;
-        else if (count > 2) intensity = 2;
-        else if (count > 0) intensity = 1;
-
-        weekData.push({
-          intensity,
-          date: dateFormatter.format(targetTime),
-          count,
-        });
-      }
-      data.push(weekData);
-    }
-    return { grid: data, total: activityTotal };
-  }, [userData?.platformActivityLogs]);
-
-  const handleShareProfile = async () => {
-    const code = userData?.referralCode || "NEWCODE";
-    const profileUrl = `${window.location.origin}${window.location.pathname}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${userData?.name || user?.displayName || "RankerHub User"}`,
-          text: `Join RankerHub with my referral code: ${code}`,
-          url: profileUrl,
-        });
-        setToasts((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(),
-            message: "Shared successfully.",
-            type: "success",
-          },
-        ]);
-        return;
-      } catch {
-        // user cancelled; fallback to clipboard
-      }
-    }
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(code);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = code;
-        ta.style.position = "fixed";
-        ta.style.left = "-9999px";
-        document.body.appendChild(ta);
-        ta.select();
-        const success = document.execCommand("copy");
-        document.body.removeChild(ta);
-        if (!success) throw new Error("execCommand copy failed");
-      }
-
-      setCopied(true);
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: "Referral code copied to clipboard.",
-          type: "success",
-        },
-      ]);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Share/copy failed", err);
-      setToasts((prev) => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          message: "Failed to copy referral code.",
-          type: "error",
-        },
-      ]);
-    }
-  };
 
   const handleSharePublicProfile = async () => {
     const usernameParam = userData?.githubUsername || username;
@@ -724,515 +495,610 @@ export const Profile = () => {
     }
 
     try {
-      const original = profileCardRef.current;
-      const clone = original.cloneNode(true);
+      const width = 1200;
+      const height = 630;
 
-      clone.querySelectorAll(".pointer-events-none").forEach((n) => n.remove());
-
-      const copyComputedStyles = (sourceEl, targetEl) => {
-        const computed = window.getComputedStyle(sourceEl);
-        let cssText = "";
-        for (let i = 0; i < computed.length; i++) {
-          const prop = computed[i];
-          try {
-            cssText += `${prop}: ${computed.getPropertyValue(prop)}; `;
-          } catch {
-            // ignore inaccessible properties
-          }
-        }
-        targetEl.style.cssText = cssText;
-      };
-
-      const inlineAllStyles = (srcRoot, tgtRoot) => {
-        copyComputedStyles(srcRoot, tgtRoot);
-        const srcChildren = Array.from(srcRoot.children || []);
-        const tgtChildren = Array.from(tgtRoot.children || []);
-        for (let i = 0; i < srcChildren.length; i++) {
-          if (tgtChildren[i]) inlineAllStyles(srcChildren[i], tgtChildren[i]);
+      const imgToDataUrl = async (url) => {
+        try {
+          const res = await fetch(url, { mode: "cors" });
+          const blob = await res.blob();
+          return await new Promise((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(fr.result);
+            fr.onerror = reject;
+            fr.readAsDataURL(blob);
+          });
+        } catch (e) {
+          console.warn("Avatar fetch failed, using blank:", e);
+          return null;
         }
       };
 
-      try {
-        inlineAllStyles(original, clone);
-      } catch (e) {
-        console.warn("Inline styles fallback:", e);
+      const avatarUrl =
+        (userData && (userData.avatar || user?.photoURL)) ||
+        "https://avatars.githubusercontent.com/u/9919?v=4";
+      const avatarData = await imgToDataUrl(avatarUrl);
+
+      const svgParts = [];
+      svgParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+      svgParts.push(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+      );
+      svgParts.push(`<defs>`);
+      svgParts.push(`<style><![CDATA[
+        .title{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;fill:#ffffff;font-weight:800}
+        .meta{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:#93c5fd}
+        .body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:rgba(255,255,255,0.85)}
+      ]]></style>`);
+      svgParts.push(
+        `<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`,
+      );
+      svgParts.push(`</defs>`);
+      svgParts.push(
+        `<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`,
+      );
+
+      const avatarX = 48;
+      const avatarY = 48;
+      const avatarSize = 160;
+      if (avatarData) {
+        svgParts.push(
+          `<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`,
+        );
+      } else {
+        svgParts.push(
+          `<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`,
+        );
       }
 
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
+      const textX = avatarX + avatarSize + 36;
+      const textY = avatarY + 36;
+      const displayName =
+        (userData && userData.name) ||
+        (user && user.displayName) ||
+        "Developer";
+      const usernameHandle =
+        (userData && userData.githubUsername) || "developer";
+      const collegeName =
+        (userData && userData.college) || "Campus";
+      const referralCode = (userData && userData.referralCode) || "N/A";
+
+      svgParts.push(
+        `<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`,
+      );
+      svgParts.push(
+        `<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`,
+      );
+
+      const description =
+        "Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.";
+      const wrapTextLines = (text, maxChars) => {
+        const words = text.split(" ");
+        const lines = [];
+        let cur = "";
+        for (const w of words) {
+          if ((cur + " " + w).trim().length <= maxChars) {
+            cur = (cur + " " + w).trim();
+          } else {
+            if (cur) lines.push(cur);
+            cur = w;
+          }
+        }
+        if (cur) lines.push(cur);
+        return lines;
+      };
+      const descLines = wrapTextLines(description, 56);
+      for (let i = 0; i < descLines.length; i++) {
+        const line = descLines[i];
+        const y = textY + 56 + i * 20;
+        svgParts.push(
+          `<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`,
+        );
       }
 
-      const rect = original.getBoundingClientRect();
-      clone.style.position = "fixed";
-      clone.style.left = "-9999px";
-      clone.style.top = "0";
-      clone.style.width = `${Math.round(rect.width)}px`;
-      clone.style.height = `${Math.round(rect.height)}px`;
-      clone.style.boxSizing = "border-box";
+      svgParts.push(
+        `<g transform="translate(${width - 260},${avatarY})">`,
+      );
+      svgParts.push(
+        `<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`,
+      );
+      svgParts.push(
+        `<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`,
+      );
+      svgParts.push(
+        `<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`,
+      );
+      svgParts.push(
+        `<text x="12" y="105" class="meta" font-size="12">Referral</text>`,
+      );
+      svgParts.push(
+        `<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`,
+      );
+      svgParts.push(`</g>`);
+      svgParts.push(`</svg>`);
 
-      const isDev = import.meta.env.VITE_DEV_AUTH_BYPASS === "true";
-      if (isDev) {
-        const previousFocus = document.activeElement;
+      const svgString = svgParts.join("\n");
+      const blob = new Blob([svgString], {
+        type: "image/svg+xml;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
 
-        const overlay = document.createElement("div");
-        overlay.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,6,23,0.8);z-index:999999;padding:24px;`;
-
-        const container = document.createElement("div");
-        container.style.cssText = `position:relative;max-width:calc(100% - 48px);max-height:calc(100% - 48px);overflow:auto;padding:18px;border-radius:12px;`;
-
-        const dbg = document.createElement("div");
-        dbg.style.cssText =
-          "position:absolute;left:12px;top:12px;padding:6px 10px;background:rgba(0,0,0,0.6);color:#fff;border-radius:6px;font-size:12px;z-index:100000";
-        dbg.textContent = `Preview nodes: ${clone.getElementsByTagName("*").length}`;
-
-        const closeBtn = document.createElement("button");
-        closeBtn.type = "button";
-        closeBtn.textContent = "Close Preview";
-        closeBtn.setAttribute("aria-label", "Close profile preview overlay");
-        closeBtn.style.cssText =
-          "position:absolute;right:12px;top:12px;padding:6px 10px;background:#111827;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000";
-
-        const handleClose = () => {
-          if (overlay && overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
-          }
-          window.removeEventListener("keydown", handleKeyDown);
-          if (previousFocus && typeof previousFocus.focus === "function") {
-            previousFocus.focus();
-          }
-        };
-
-        const handleKeyDown = (e) => {
-          if (e.key === "Escape") handleClose();
-        };
-
-        closeBtn.onclick = handleClose;
-        window.addEventListener("keydown", handleKeyDown);
-
-        const downloadBtn = document.createElement("button");
-        downloadBtn.type = "button";
-        downloadBtn.textContent = "Download Preview as PNG";
-        downloadBtn.setAttribute("aria-label", "Download profile card as PNG image");
-        downloadBtn.style.cssText =
-          "position:absolute;right:140px;top:12px;padding:6px 10px;background:#7c3aed;color:#fff;border-radius:8px;border:none;cursor:pointer;z-index:100000";
-
-        downloadBtn.onclick = async () => {
+      await new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
           try {
-            const width = 1200;
-            const height = 630;
-
-            const imgToDataUrl = async (url) => {
-              try {
-                const res = await fetch(url, { mode: "cors" });
-                const blob = await res.blob();
-                return await new Promise((resolve, reject) => {
-                  const fr = new FileReader();
-                  fr.onload = () => resolve(fr.result);
-                  fr.onerror = reject;
-                  fr.readAsDataURL(blob);
-                });
-              } catch (e) {
-                console.warn("Avatar fetch failed, using blank:", e);
-                return null;
-              }
-            };
-
-            const avatarUrl =
-              (userData && (userData.avatar || user?.photoURL)) ||
-              "https://avatars.githubusercontent.com/u/9919?v=4";
-            const avatarData = await imgToDataUrl(avatarUrl);
-
-            const svgParts = [];
-            svgParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-            svgParts.push(
-              `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-            );
-            svgParts.push(`<defs>`);
-            svgParts.push(`<style><![CDATA[
-              .title{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;fill:#ffffff;font-weight:800}
-              .meta{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:#93c5fd}
-              .body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:rgba(255,255,255,0.85)}
-            ]]></style>`);
-            svgParts.push(
-              `<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`,
-            );
-            svgParts.push(`</defs>`);
-            svgParts.push(
-              `<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`,
-            );
-
-            const avatarX = 48;
-            const avatarY = 48;
-            const avatarSize = 160;
-            if (avatarData) {
-              svgParts.push(
-                `<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`,
-              );
-            } else {
-              svgParts.push(
-                `<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`,
-              );
-            }
-
-            const textX = avatarX + avatarSize + 36;
-            const textY = avatarY + 36;
-            const displayName =
-              (userData && userData.name) ||
-              (user && user.displayName) ||
-              "Developer";
-            const usernameHandle =
-              (userData && userData.githubUsername) || "developer";
-            const collegeName =
-              (userData && userData.college) || "Mumbai College";
-            const referralCode = (userData && userData.referralCode) || "N/A";
-
-            svgParts.push(
-              `<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`,
-            );
-            svgParts.push(
-              `<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`,
-            );
-
-            const description =
-              "Verified RankerHub platform developer. Actively syncing repository activity to scale the leaderboard, sharing referral tokens, and resolving daily algorithmic arena challenges.";
-            const wrapTextLines = (text, maxChars) => {
-              const words = text.split(" ");
-              const lines = [];
-              let cur = "";
-              for (const w of words) {
-                if ((cur + " " + w).trim().length <= maxChars) {
-                  cur = (cur + " " + w).trim();
-                } else {
-                  if (cur) lines.push(cur);
-                  cur = w;
-                }
-              }
-              if (cur) lines.push(cur);
-              return lines;
-            };
-            const descLines = wrapTextLines(description, 56);
-            for (let i = 0; i < descLines.length; i++) {
-              const line = descLines[i];
-              const y = textY + 56 + i * 20;
-              svgParts.push(
-                `<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`,
-              );
-            }
-
-            svgParts.push(
-              `<g transform="translate(${width - 260},${avatarY})">`,
-            );
-            svgParts.push(
-              `<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`,
-            );
-            svgParts.push(
-              `<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`,
-            );
-            svgParts.push(
-              `<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`,
-            );
-            svgParts.push(
-              `<text x="12" y="105" class="meta" font-size="12">Referral</text>`,
-            );
-            svgParts.push(
-              `<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`,
-            );
-            svgParts.push(`</g>`);
-            svgParts.push(`</svg>`);
-
-            const svgString = svgParts.join("\n");
-            const blob = new Blob([svgString], {
-              type: "image/svg+xml;charset=utf-8",
-            });
-            const url = URL.createObjectURL(blob);
-
-            await new Promise((resolve, reject) => {
-              const img = new window.Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => {
-                try {
-                  const canvas = document.createElement("canvas");
-                  canvas.width = width;
-                  canvas.height = height;
-                  const ctx = canvas.getContext("2d");
-                  ctx.fillStyle =
-                    getComputedStyle(document.body).backgroundColor ||
-                    "#0b1220";
-                  ctx.fillRect(0, 0, width, height);
-                  ctx.drawImage(img, 0, 0, width, height);
-                  const dataUrl = canvas.toDataURL("image/png");
-                  const link = document.createElement("a");
-                  link.download = `${userData?.githubUsername || userData?.name || "profile"}-rankerhub.png`;
-                  link.href = dataUrl;
-                  link.click();
-                  URL.revokeObjectURL(url);
-                  resolve();
-                } catch (err) {
-                  URL.revokeObjectURL(url);
-                  reject(err);
-                }
-              };
-              img.onerror = (e) => {
-                URL.revokeObjectURL(url);
-                reject(e);
-              };
-              img.src = url;
-            });
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#0b1220";
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL("image/png");
+            const link = document.createElement("a");
+            link.download = `${userData?.githubUsername || userData?.name || "profile"}-rankerhub.png`;
+            link.href = dataUrl;
+            link.click();
+            URL.revokeObjectURL(url);
+            resolve();
           } catch (err) {
-            console.error("SVG export failed", err);
-            setToasts((prev) => [
-              ...prev,
-              {
-                id: Date.now() + Math.random(),
-                message: "SVG export failed.",
-                type: "error",
-              },
-            ]);
+            URL.revokeObjectURL(url);
+            reject(err);
           }
         };
+        img.onerror = (e) => {
+          URL.revokeObjectURL(url);
+          reject(e);
+        };
+        img.src = url;
+      });
 
-        container.appendChild(dbg);
-        container.appendChild(downloadBtn);
-        container.appendChild(closeBtn);
-        container.appendChild(clone);
-        overlay.appendChild(container);
-        document.body.appendChild(overlay);
-
-        setTimeout(() => closeBtn.focus(), 0);
-      }
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Profile card exported as PNG successfully!",
+          type: "success",
+        },
+      ]);
     } catch (err) {
-      console.error("Profile card export failed", err);
+      console.error("Export failed:", err);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          message: "Failed to export profile card.",
+          type: "error",
+        },
+      ]);
     }
   };
 
   if (loadingPublicProfile) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader size="lg" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader size="lg" text="Loading Profile..." />
       </div>
     );
   }
 
-  if (!userData && !loadingPublicProfile) {
+  if (!userData) {
     return (
-      <div className="mx-auto max-w-4xl py-12 text-center">
-        <h2 className="text-2xl font-bold text-white">Profile Not Found</h2>
-        <p className="mt-2 text-slate-400">
-          The requested user profile does not exist or has been removed.
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4">
+        <AlertCircle className="w-16 h-16 text-rose-500 mb-4 animate-bounce" />
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          User Not Found
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 max-w-md mb-6">
+          The requested profile @{username} doesn't exist or has been removed.
         </p>
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="mt-6 rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500"
-        >
-          Go Back Home
-        </button>
+        <GradientButton onClick={() => navigate("/")}>
+          Return Home
+        </GradientButton>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
-      {/* Profile Header / Card */}
-      <Card ref={profileCardRef} className="relative overflow-hidden p-6 md:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col items-center gap-6 sm:flex-row">
-            <img
-              src={userData?.avatar || user?.photoURL || "https://avatars.githubusercontent.com/u/9919?v=4"}
-              alt={userData?.name || "User Avatar"}
-              className="h-24 w-24 rounded-2xl border-2 border-indigo-500/30 object-cover shadow-lg"
-            />
-            <div className="text-center sm:text-left">
-              <div className="flex items-center justify-center gap-2 sm:justify-start">
-                <h1 className="text-2xl font-bold text-white md:text-3xl">
-                  {userData?.name || "Developer"}
-                </h1>
-                {isOwnProfile && (
-                  <button
-                    type="button"
-                    onClick={handleOpenEditModal}
-                    aria-label="Edit Profile"
-                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <p className="text-sm font-medium text-indigo-400">
-                @{userData?.githubUsername || "developer"}
-              </p>
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 sm:justify-start">
-                <span className="flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5" />
-                  {userData?.college || "College Not Specified"}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {userData?.city || "City Not Specified"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <GradientButton
-              type="button"
-              onClick={handleSharePublicProfile}
-              aria-label="Share Profile Link"
-              className="flex items-center gap-2"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </GradientButton>
-            <button
-              type="button"
-              onClick={() => setIsEmbedModalOpen(true)}
-              aria-label="Get Embed Code"
-              className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700"
-            >
-              <Code className="h-4 w-4" />
-              Embed
-            </button>
-          </div>
-        </div>
-      </Card>
-
+    <div className="min-h-screen pb-16 pt-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
       {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2">
+      <div className="fixed top-20 right-4 z-50 space-y-2 pointer-events-none">
         {toasts.map((toast) => (
-          <Toast key={toast.id} message={toast.message} type={toast.type} />
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() =>
+              setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+            }
+          />
         ))}
       </div>
 
+      {/* Main Profile Header Card */}
+      <div ref={profileCardRef}>
+        <Card className="relative overflow-hidden p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+            {/* Avatar Section */}
+            <div className="relative group">
+              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-2 border-violet-500/30 shadow-xl bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                <img
+                  src={
+                    userData.avatar ||
+                    user?.photoURL ||
+                    `https://api.dicebear.com/7.x/identicon/svg?seed=${userData.githubUsername || "user"}`
+                  }
+                  alt={userData.name || "User Avatar"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {userData.gender && (
+                <span className="absolute -bottom-2 -right-2 bg-slate-900 text-white text-xs px-2 py-1 rounded-full border border-slate-700 shadow">
+                  {userData.gender}
+                </span>
+              )}
+            </div>
+
+            {/* Profile Info */}
+            <div className="flex-1 text-center md:text-left space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center justify-center md:justify-start gap-2">
+                    {userData.name || "Developer"}
+                    <ShieldCheck className="w-5 h-5 text-violet-500 inline-block" />
+                  </h1>
+                  <p className="text-sm font-semibold text-violet-600 dark:text-violet-400">
+                    @{userData.githubUsername || "username"}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center md:justify-end gap-2">
+                  {isOwnProfile ? (
+                    <>
+                      <GradientButton
+                        onClick={handleOpenEditModal}
+                        variant="secondary"
+                        size="sm"
+                        className="flex items-center gap-1.5"
+                        aria-label="Edit Profile"
+                      >
+                        <Edit2 className="w-4 h-4" /> Edit Profile
+                      </GradientButton>
+                      <button
+                        type="button"
+                        onClick={() => setIsEmbedModalOpen(true)}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
+                        title="Embed Badge"
+                        aria-label="Embed Profile Badge"
+                      >
+                        <Code className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadProfileCard}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
+                        title="Export Card as Image"
+                        aria-label="Export Card as Image"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleSharePublicProfile}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center gap-1 text-xs font-semibold px-3"
+                        aria-label="Share Profile"
+                      >
+                        <Share2 className="w-4 h-4" /> Share
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowReport(true)}
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition text-xs font-semibold px-3"
+                        aria-label="Report User"
+                      >
+                        Report
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Bio */}
+              {userData.bio && (
+                <p className="text-sm text-slate-600 dark:text-slate-300 max-w-2xl">
+                  {userData.bio}
+                </p>
+              )}
+
+              {/* Badges / Meta Info */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {userData.city && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                    {userData.city}
+                  </span>
+                )}
+                {userData.college && (
+                  <span className="flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                    {userData.college}
+                  </span>
+                )}
+                <span className="flex items-center gap-1">
+                  <Award className="w-3.5 h-3.5 text-slate-400" />
+                  Global Rank: <strong className="text-violet-600 dark:text-violet-400">{rank}</strong>
+                </span>
+              </div>
+
+              {/* Social Links */}
+              <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
+                {userData.githubUsername && (
+                  <a
+                    href={`https://github.com/${userData.githubUsername}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="GitHub Profile"
+                    className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white transition"
+                  >
+                    <Github className="w-4 h-4" />
+                  </a>
+                )}
+                {localSocialLinks.linkedinUrl && (
+                  <a
+                    href={localSocialLinks.linkedinUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="LinkedIn Profile"
+                    className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 transition"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                  </a>
+                )}
+                {localSocialLinks.instagramHandle && (
+                  <a
+                    href={`https://instagram.com/${localSocialLinks.instagramHandle}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Instagram Profile"
+                    className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-pink-600 transition"
+                  >
+                    <Instagram className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Ranking Breakdown */}
+      <RankingBreakdown userData={userData} />
+
       {/* Edit Profile Modal */}
-      <AnimatePresence>
-        {isEditModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-profile-title"
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <h2 id="edit-profile-title" className="text-xl font-bold text-white">
-                  Edit Profile
-                </h2>
+      {isEditModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-profile-title"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+              <h3 id="edit-profile-title" className="text-xl font-bold text-slate-900 dark:text-white">
+                Edit Profile
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Close edit profile dialog"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-sm">
+              <div>
+                <label htmlFor="edit-name-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Full Name *
+                </label>
+                <input
+                  id="edit-name-input"
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-avatar-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Avatar Image URL
+                </label>
+                <input
+                  id="edit-avatar-input"
+                  type="text"
+                  value={editAvatar}
+                  onChange={(e) => setEditAvatar(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="edit-gender-select" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Gender *
+                  </label>
+                  <select
+                    id="edit-gender-select"
+                    value={editGender}
+                    onChange={(e) => setEditGender(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  >
+                    <option value="">Select...</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-binary">Non-binary</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-dob-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Date of Birth *
+                  </label>
+                  <input
+                    id="edit-dob-input"
+                    type="date"
+                    value={editDob}
+                    onChange={(e) => setEditDob(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="edit-city-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  City *
+                </label>
+                <input
+                  id="edit-city-input"
+                  type="text"
+                  value={editCity}
+                  onChange={(e) => setEditCity(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-college-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  College *
+                </label>
+                <input
+                  id="edit-college-input"
+                  type="text"
+                  value={collegeSearch}
+                  onChange={(e) => {
+                    setCollegeSearch(e.target.value);
+                    setEditCollege(e.target.value);
+                    setShowCollegeDropdown(true);
+                  }}
+                  onFocus={() => setShowCollegeDropdown(true)}
+                  placeholder="Search college..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+                {showCollegeDropdown && (
+                  <div
+                    ref={editDropdownRef}
+                    className="mt-1 max-h-40 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 p-1"
+                  >
+                    {filteredColleges.map((col) => (
+                      <button
+                        type="button"
+                        key={col}
+                        onClick={() => {
+                          setEditCollege(col);
+                          setCollegeSearch(col);
+                          setShowCollegeDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-violet-500/10 cursor-pointer rounded-lg text-xs text-slate-700 dark:text-slate-300"
+                      >
+                        {col}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="edit-bio-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Bio
+                </label>
+                <textarea
+                  id="edit-bio-input"
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  aria-label="Close edit profile modal"
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  <X className="h-5 w-5" />
+                  Cancel
                 </button>
+                <GradientButton type="submit" disabled={updating}>
+                  {updating ? "Saving..." : "Save Changes"}
+                </GradientButton>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
-                {editError && (
-                  <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400">
-                    {editError}
-                  </div>
-                )}
-                <div>
-                  <label className="block text-xs font-medium text-slate-400">Full Name</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400">Bio</label>
-                  <textarea
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    rows={3}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
+      {/* Embed Badge Modal */}
+      {isEmbedModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="embed-badge-title"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 id="embed-badge-title" className="text-lg font-bold text-slate-900 dark:text-white">
+                Embed Profile Badge
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEmbedModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                aria-label="Close embed profile badge dialog"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800"
-                  >
-                    Cancel
-                  </button>
-                  <GradientButton type="submit" disabled={updating}>
-                    {updating ? "Saving..." : "Save Changes"}
-                  </GradientButton>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Copy this Markdown snippet to embed your live RankerHub card into your GitHub README or personal portfolio.
+            </p>
 
-      {/* Embed Code Modal */}
-      <AnimatePresence>
-        {isEmbedModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="embed-modal-title"
-          >
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="w-full max-w-lg rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <h2 id="embed-modal-title" className="text-xl font-bold text-white">
-                  Embed Profile Card
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setIsEmbedModalOpen(false)}
-                  aria-label="Close embed modal"
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+            <div className="p-3 bg-slate-100 dark:bg-slate-950 rounded-xl font-mono text-xs text-violet-600 dark:text-violet-400 break-all border border-slate-200 dark:border-slate-800">
+              {getEmbedMarkdown()}
+            </div>
 
-              <div className="mt-4 space-y-4">
-                <p className="text-sm text-slate-400">
-                  Copy this Markdown snippet to embed your live RankerHub profile badge in your GitHub README or personal portfolio.
-                </p>
-                <div className="relative rounded-lg bg-slate-950 p-3 font-mono text-xs text-indigo-300">
-                  {getEmbedMarkdown()}
-                </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyEmbed}
-                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy Markdown
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="flex justify-end gap-2 pt-2">
+              <GradientButton onClick={handleCopyEmbed} className="flex items-center gap-1.5 text-xs">
+                <Copy className="w-4 h-4" /> Copy Markdown
+              </GradientButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReport && (
+        <ReportModal
+          isOpen={showReport}
+          onClose={() => setShowReport(false)}
+          reportedUser={userData?.githubUsername}
+        />
+      )}
     </div>
   );
 };
