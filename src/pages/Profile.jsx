@@ -1381,6 +1381,7 @@ export const Profile = () => {
           <button
             onClick={() => handleUpdateSocialLink(social.id, editValue)}
             disabled={updating}
+            aria-label={`Save ${social.name} link`}
             className="p-1.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 transition-colors disabled:opacity-50"
           >
             <Save className="w-3.5 h-3.5" />
@@ -1390,6 +1391,7 @@ export const Profile = () => {
               setEditingSocial(null);
               setEditValue("");
             }}
+            aria-label={`Cancel editing ${social.name} link`}
             className="p-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 hover:bg-slate-300 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
@@ -1400,7 +1402,7 @@ export const Profile = () => {
 
     if (social.id === "github" || social.id === "email") {
       return (
-        <a
+        
           href={social.link}
           target={social.id === "email" ? "_self" : "_blank"}
           rel="noreferrer"
@@ -1419,7 +1421,7 @@ export const Profile = () => {
       return (
         <div className="relative group">
           {social.link ? (
-            <a
+            
               href={social.link}
               target="_blank"
               rel="noreferrer"
@@ -1448,6 +1450,7 @@ export const Profile = () => {
                 setEditingSocial(social.id);
                 setEditValue(displayValue || "");
               }}
+              aria-label={`Edit ${social.name}`}
               className="absolute -top-1 -right-1 p-0.5 rounded-full bg-violet-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
               title={`Edit ${social.name}`}
             >
@@ -2367,6 +2370,7 @@ export const Profile = () => {
             >
               <button
                 onClick={() => setIsEditModalOpen(false)}
+                aria-label="Close edit profile dialog"
                 className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
                 disabled={updating}
               >
@@ -2513,8 +2517,9 @@ export const Profile = () => {
                         >
                           {filteredColleges.length > 0 ? (
                             filteredColleges.map((col) => (
-                              <div
+                              <button
                                 key={col}
+                                type="button"
                                 onClick={() => {
                                   setEditCollege(col);
                                   setCollegeSearch(col);
@@ -2523,10 +2528,10 @@ export const Profile = () => {
                                     setCustomCollege("");
                                   }
                                 }}
-                                className="px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 cursor-pointer font-medium transition-colors"
+                                className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 cursor-pointer font-medium transition-colors"
                               >
                                 {col}
-                              </div>
+                              </button>
                             ))
                           ) : (
                             <div className="px-3 py-2 text-xs text-slate-500 text-center font-bold">
@@ -2561,22 +2566,21 @@ export const Profile = () => {
                   </AnimatePresence>
                 </div>
 
-                {/* Currently Learning */}
-             {/* Bio */}
-<div className="space-y-1.5">
-  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-    Bio
-  </label>
-  <textarea
-    placeholder="Tell the community about yourself..."
-    value={editBio}
-    maxLength={200}
-    onChange={(e) => setEditBio(e.target.value)}
-    rows={3}
-    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all resize-none"
-  />
-  <p className="text-right text-[10px] text-slate-500 font-medium">{editBio.length}/200</p>
-</div>
+                {/* Bio */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    Bio
+                  </label>
+                  <textarea
+                    placeholder="Tell the community about yourself..."
+                    value={editBio}
+                    maxLength={200}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-800 bg-slate-950/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 text-white transition-all resize-none"
+                  />
+                  <p className="text-right text-[10px] text-slate-500 font-medium">{editBio.length}/200</p>
+                </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                     Currently Learning
@@ -2595,6 +2599,7 @@ export const Profile = () => {
                               prev.filter((_, i) => i !== index),
                             )
                           }
+                          aria-label={`Remove ${tag} tag`}
                           className="hover:text-red-400 transition-colors"
                         >
                           ×
@@ -2691,6 +2696,7 @@ export const Profile = () => {
             >
               <button
                 onClick={() => setIsEmbedModalOpen(false)}
+                aria-label="Close embed dialog"
                 className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
