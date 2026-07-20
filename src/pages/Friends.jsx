@@ -185,12 +185,18 @@ export const Friends = () => {
       ? leaderboardStandings
       : connections[activeTab] || [];
   const filteredDevelopers = React.useMemo(() => {
-    return activeDevelopers.filter((dev) => {
-      if (selectedCollege === "All") return true;
-      return dev.college === selectedCollege;
-    });
-  }, [activeDevelopers, selectedCollege]);
+  // 1. Calculate activeDevelopers INSIDE the memo
+  const activeDevelopers =
+    activeTab === "leaderboard"
+      ? leaderboardStandings
+      : connections[activeTab] || [];
 
+  // 2. Perform the filter
+  return activeDevelopers.filter((dev) => {
+    if (selectedCollege === "All") return true;
+    return dev.college === selectedCollege;
+  });
+}, [activeTab, leaderboardStandings, connections, selectedCollege]);
   const tabCopy = {
     friends:
       "Developers who follow you back and collaborate with you across RankerHub.",

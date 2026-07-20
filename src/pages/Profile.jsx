@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import ReportModal from "../components/ReportModal";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -11,8 +11,7 @@ import {
   AlertCircle,
   Share2,
   Code,
-  Copy,
-  Image as ImageIcon,
+  ImageIcon,
 } from "lucide-react";
 import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import {
@@ -75,7 +74,7 @@ export const Profile = () => {
       try {
         const q1 = query(
           collection(db, "users"),
-          where("githubUsername", "==", username),
+          where("githubUsername", "==", username)
         );
         const snapshot1 = await getDocs(q1);
         if (!snapshot1.empty) {
@@ -91,7 +90,7 @@ export const Profile = () => {
               visitedAt: Date.now(),
             };
             const filtered = existing.filter(
-              (e) => e.username !== entry.username,
+              (e) => e.username !== entry.username
             );
             const updated = [entry, ...filtered].slice(0, 5);
             localStorage.setItem(key, JSON.stringify(updated));
@@ -137,7 +136,7 @@ export const Profile = () => {
   const [customCollege, setCustomCollege] = useState("");
   const [editError, setEditError] = useState("");
 
-  const [editLearningTags] = useState([]);
+  const editLearningTags = useMemo(() => [], []);
   const editDropdownRef = useRef(null);
   const profileCardRef = useRef(null);
 
@@ -159,7 +158,7 @@ export const Profile = () => {
     }
     const searchLower = collegeSearch.toLowerCase();
     return collegesList.filter((col) =>
-      col.toLowerCase().includes(searchLower),
+      col.toLowerCase().includes(searchLower)
     );
   }, [collegeSearch]);
 
@@ -296,7 +295,7 @@ export const Profile = () => {
             uid: user.uid,
             avatar: updateData.avatar,
             ts: Date.now(),
-          }),
+          })
         );
       }
 
@@ -317,27 +316,31 @@ export const Profile = () => {
     }
   };
 
-  const [localSocialLinks, setLocalSocialLinks] = useState({
+
+// Clean effect dedicated solely to GitHub syncing (no setState inside!)
+useEffect(() => {
+  if (userData?.githubUsername && typeof syncGitHubData === "function") {
+    syncGitHubData();
+  }
+}, [userData?.githubUsername, syncGitHubData]);
+  
+
+  // Safely handle social links and github syncing without causing render loop errors// 1. This calculates the social links directly from userData during every render
+const localSocialLinks = useMemo(
+  () => ({
     linkedinUrl: userData?.linkedinUrl || null,
     instagramHandle: userData?.instagramHandle || null,
     discordUsername: userData?.discordUsername || null,
-  });
+  }),
+  [userData?.linkedinUrl, userData?.instagramHandle, userData?.discordUsername]
+);
 
-  useEffect(() => {
-    if (user && userData?.githubUsername) {
-      syncGitHubData();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (userData) {
-      setLocalSocialLinks({
-        linkedinUrl: userData.linkedinUrl || null,
-        instagramHandle: userData.instagramHandle || null,
-        discordUsername: userData.discordUsername || null,
-      });
-    }
-  }, [userData]);
+// 2. This effect only handles the GitHub sync (no state updates inside!)
+useEffect(() => {
+  if (userData?.githubUsername && typeof syncGitHubData === "function") {
+    syncGitHubData();
+  }
+}, [userData?.githubUsername, syncGitHubData]);
 
   useEffect(() => {
     if (!userData || !userData.points) return;
@@ -350,8 +353,8 @@ export const Profile = () => {
           where(
             "points.gitRankPoints",
             ">",
-            userData.points.gitRankPoints ?? 0,
-          ),
+            userData.points.gitRankPoints ?? 0
+          )
         );
         const snapshot = await getCountFromServer(q);
         const currentRank = snapshot.data().count + 1;
@@ -364,7 +367,7 @@ export const Profile = () => {
             user.uid,
             currentRank,
             userData.points.totalPoints,
-            userData.timezone,
+            userData.timezone
           );
         }
       } catch (err) {
@@ -438,11 +441,11 @@ export const Profile = () => {
     }
   };
 
-  const getEmbedMarkdown = () => {
+  const getEmbedMarkdown = useCallback(() => {
     const domain = window.location.origin;
     const usernameParam = userData?.githubUsername || username || "developer";
     return `[![${userData?.name || "Developer"}'s RankerHub Stats](${domain}/api/og/profile/${usernameParam})](${domain}/#/profile/${usernameParam})`;
-  };
+  }, [userData?.githubUsername, userData?.name, username]);
 
   const handleCopyEmbed = async () => {
     try {
@@ -522,7 +525,7 @@ export const Profile = () => {
       const svgParts = [];
       svgParts.push(`<?xml version="1.0" encoding="UTF-8"?>`);
       svgParts.push(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
       );
       svgParts.push(`<defs>`);
       svgParts.push(`<style><![CDATA[
@@ -531,11 +534,11 @@ export const Profile = () => {
         .body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto;fill:rgba(255,255,255,0.85)}
       ]]></style>`);
       svgParts.push(
-        `<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`,
+        `<linearGradient id="g1" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#0b1220"/></linearGradient>`
       );
       svgParts.push(`</defs>`);
       svgParts.push(
-        `<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`,
+        `<rect width="100%" height="100%" rx="16" fill="url(#g1)"/>`
       );
 
       const avatarX = 48;
@@ -543,11 +546,11 @@ export const Profile = () => {
       const avatarSize = 160;
       if (avatarData) {
         svgParts.push(
-          `<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`,
+          `<image href="${avatarData}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" style="border-radius:16px;" preserveAspectRatio="xMidYMid slice" />`
         );
       } else {
         svgParts.push(
-          `<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`,
+          `<rect x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" rx="16" fill="#111827"/>`
         );
       }
 
@@ -564,10 +567,10 @@ export const Profile = () => {
       const referralCode = (userData && userData.referralCode) || "N/A";
 
       svgParts.push(
-        `<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`,
+        `<text x="${textX}" y="${textY}" class="title" font-size="48">${escapeXml(displayName)}</text>`
       );
       svgParts.push(
-        `<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`,
+        `<text x="${textX}" y="${textY + 40}" class="meta" font-size="18">@${escapeXml(usernameHandle)} • ${escapeXml(collegeName)}</text>`
       );
 
       const description =
@@ -592,27 +595,27 @@ export const Profile = () => {
         const line = descLines[i];
         const y = textY + 56 + i * 20;
         svgParts.push(
-          `<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`,
+          `<text x="${textX}" y="${y}" class="body" font-size="14">${escapeXml(line)}</text>`
         );
       }
 
       svgParts.push(
-        `<g transform="translate(${width - 260},${avatarY})">`,
+        `<g transform="translate(${width - 260},${avatarY})">`
       );
       svgParts.push(
-        `<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`,
+        `<text x="0" y="20" class="meta" font-size="14">RankerHub</text>`
       );
       svgParts.push(
-        `<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`,
+        `<text x="0" y="50" class="title" font-size="20">Shareable Profile Card</text>`
       );
       svgParts.push(
-        `<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`,
+        `<rect x="0" y="80" width="220" height="60" rx="8" fill="rgba(255,255,255,0.04)" />`
       );
       svgParts.push(
-        `<text x="12" y="105" class="meta" font-size="12">Referral</text>`,
+        `<text x="12" y="105" class="meta" font-size="12">Referral</text>`
       );
       svgParts.push(
-        `<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`,
+        `<text x="12" y="137" class="title" font-size="18">${escapeXml(referralCode)}</text>`
       );
       svgParts.push(`</g>`);
       svgParts.push(`</svg>`);
@@ -878,6 +881,52 @@ export const Profile = () => {
       {/* Ranking Breakdown */}
       <RankingBreakdown userData={userData} />
 
+      {/* Report Modal */}
+      {showReport && (
+        <ReportModal
+          reportedUser={userData}
+          onClose={() => setShowReport(false)}
+        />
+      )}
+
+      {/* Embed Modal */}
+      {isEmbedModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Embed Profile Badge
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEmbedModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              Copy the Markdown snippet below to display your live RankerHub profile badge inside your GitHub README or personal portfolio:
+            </p>
+            <textarea
+              readOnly
+              rows={4}
+              value={getEmbedMarkdown()}
+              className="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 focus:outline-none"
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <GradientButton size="sm" onClick={handleCopyEmbed}>
+                Copy Markdown
+              </GradientButton>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Profile Modal */}
       {isEditModalOpen && (
         <div
@@ -917,7 +966,8 @@ export const Profile = () => {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  required
                 />
               </div>
 
@@ -927,11 +977,11 @@ export const Profile = () => {
                 </label>
                 <input
                   id="edit-avatar-input"
-                  type="text"
+                  type="url"
                   value={editAvatar}
                   onChange={(e) => setEditAvatar(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="https://example.com/avatar.jpg"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
 
@@ -944,9 +994,10 @@ export const Profile = () => {
                     id="edit-gender-select"
                     value={editGender}
                     onChange={(e) => setEditGender(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    required
                   >
-                    <option value="">Select...</option>
+                    <option value="">Select</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Non-binary">Non-binary</option>
@@ -963,7 +1014,8 @@ export const Profile = () => {
                     type="date"
                     value={editDob}
                     onChange={(e) => setEditDob(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    required
                   />
                 </div>
               </div>
@@ -977,68 +1029,94 @@ export const Profile = () => {
                   type="text"
                   value={editCity}
                   onChange={(e) => setEditCity(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  required
                 />
               </div>
 
-              <div>
-                <label htmlFor="edit-college-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  College *
+              <div ref={editDropdownRef} className="relative">
+                <label htmlFor="edit-college-search" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  College / Institution *
                 </label>
                 <input
-                  id="edit-college-input"
+                  id="edit-college-search"
                   type="text"
                   value={collegeSearch}
+                  onFocus={() => setShowCollegeDropdown(true)}
                   onChange={(e) => {
                     setCollegeSearch(e.target.value);
                     setEditCollege(e.target.value);
                     setShowCollegeDropdown(true);
                   }}
-                  onFocus={() => setShowCollegeDropdown(true)}
-                  placeholder="Search college..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Search college name..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
+
                 {showCollegeDropdown && (
-                  <div
-                    ref={editDropdownRef}
-                    className="mt-1 max-h-40 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-10 p-1"
-                  >
-                    {filteredColleges.map((col) => (
-                      <button
-                        type="button"
+                  <ul className="absolute z-10 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 text-xs">
+                    {filteredColleges.slice(0, 50).map((col) => (
+                      <li
                         key={col}
                         onClick={() => {
                           setEditCollege(col);
                           setCollegeSearch(col);
                           setShowCollegeDropdown(false);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-violet-500/10 cursor-pointer rounded-lg text-xs text-slate-700 dark:text-slate-300"
+                        className="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-slate-800 dark:text-slate-200"
                       >
                         {col}
-                      </button>
+                      </li>
                     ))}
-                  </div>
+                    <li
+                      onClick={() => {
+                        setEditCollege("Other");
+                        setCollegeSearch("Other");
+                        setShowCollegeDropdown(false);
+                      }}
+                      className="px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer font-semibold text-violet-600 dark:text-violet-400"
+                    >
+                      Other (Specify manually)
+                    </li>
+                  </ul>
                 )}
               </div>
 
+              {editCollege === "Other" && (
+                <div>
+                  <label htmlFor="edit-custom-college" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Custom College Name *
+                  </label>
+                  <input
+                    id="edit-custom-college"
+                    type="text"
+                    value={customCollege}
+                    onChange={(e) => setCustomCollege(e.target.value)}
+                    placeholder="Enter full college name"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    required
+                  />
+                </div>
+              )}
+
               <div>
-                <label htmlFor="edit-bio-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Bio
+                <label htmlFor="edit-bio-textarea" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Bio / About Me
                 </label>
                 <textarea
-                  id="edit-bio-input"
+                  id="edit-bio-textarea"
+                  rows={3}
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Tell other developers about yourself..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
                 />
               </div>
 
-              <div className="pt-4 flex items-center justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition"
                 >
                   Cancel
                 </button>
@@ -1050,57 +1128,6 @@ export const Profile = () => {
           </div>
         </div>
       )}
-
-      {/* Embed Badge Modal */}
-      {isEmbedModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="embed-badge-title"
-        >
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <h3 id="embed-badge-title" className="text-lg font-bold text-slate-900 dark:text-white">
-                Embed Profile Badge
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsEmbedModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                aria-label="Close embed profile badge dialog"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Copy this Markdown snippet to embed your live RankerHub card into your GitHub README or personal portfolio.
-            </p>
-
-            <div className="p-3 bg-slate-100 dark:bg-slate-950 rounded-xl font-mono text-xs text-violet-600 dark:text-violet-400 break-all border border-slate-200 dark:border-slate-800">
-              {getEmbedMarkdown()}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <GradientButton onClick={handleCopyEmbed} className="flex items-center gap-1.5 text-xs">
-                <Copy className="w-4 h-4" /> Copy Markdown
-              </GradientButton>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Report Modal */}
-      {showReport && (
-        <ReportModal
-          isOpen={showReport}
-          onClose={() => setShowReport(false)}
-          reportedUser={userData?.githubUsername}
-        />
-      )}
     </div>
   );
 };
-
-export default Profile;
