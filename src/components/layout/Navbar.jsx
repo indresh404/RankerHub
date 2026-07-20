@@ -1,16 +1,17 @@
+import { collection, query, orderBy, onSnapshot, doc, deleteDoc, writeBatch } from "firebase/firestore";
+import { db } from "../../lib/firebase";
 import MobileSearchInput from "../ui/MobileSearchInput";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Search, Menu, X, Check, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "../ui/ThemeToggle";
-import { mockNotifications } from "../../data/activities";
 import { useAuth } from "../../context/AuthContext";
 import { searchLeaderboard } from "../../utils/searchUtils";
 
 export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   const { user, userData } = useAuth();
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -54,14 +55,63 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Real-time Firestore notification listener
+  // Fixes #639: single stable listener per mounted instance, torn down cleanly on unmount/auth change
+  useEffect(() => {
+    if (!user?.uid) {
+      setNotifications([]);
+      return undefined;
+    }
+
+    const notifRef = collection(db, "users", user.uid, "notifications");
+    const q = query(notifRef, orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const items = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }));
+        setNotifications(items);
+      },
+      (error) => {
+        console.error("Notification listener error:", error);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    if (!user?.uid) return;
+    const unread = notifications.filter((n) => !n.read);
+    if (unread.length === 0) return;
+
+    const batch = writeBatch(db);
+    unread.forEach((n) => {
+      const notifDocRef = doc(db, "users", user.uid, "notifications", n.id);
+      batch.update(notifDocRef, { read: true });
+    });
+    await batch.commit();
   };
 
-  const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotification = async (id) => {
+    if (!user?.uid) return;
+    const notifDocRef = doc(db, "users", user.uid, "notifications", id);
+    await deleteDoc(notifDocRef);
+  };
+
+  const clearAllNotifications = async () => {
+    if (!user?.uid) return;
+    const batch = writeBatch(db);
+    notifications.forEach((n) => {
+      const notifDocRef = doc(db, "users", user.uid, "notifications", n.id);
+      batch.delete(notifDocRef);
+    });
+    await batch.commit();
   };
 
   const handleSearchSubmit = (e) => {
@@ -327,7 +377,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                 {notifications.length > 0 && (
                   <div className="p-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 text-center">
                     <button
-                      onClick={() => setNotifications([])}
+                      onClick={clearAllNotifications}
                       className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
                     >
                       Clear all notifications
