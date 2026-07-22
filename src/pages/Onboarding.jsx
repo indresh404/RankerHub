@@ -400,7 +400,14 @@ export const Onboarding = () => {
           },
         };
 
-        // If referred, update the Referrer's data
+        // If referred, queue the claim for verification instead of crediting instantly.
+        // (Issue #636) Points used to be granted the moment a new account signed up
+        // with a code — nothing checked whether the new account was a real, distinct
+        // person. Now the referrer's points are NOT touched here at all. This just
+        // adds the new user to pendingBy; the claimReferral Cloud Function picks it
+        // up, checks the new account's GitHub age/activity + signup-IP dedup, and
+        // only then credits usedBy/totalEarned on the referrals doc and
+        // points.referralPoints/totalPoints on the referrer's user doc.
         if (referrerUid) {
           const referrerUserRef = doc(db, "users", referrerUid);
           const referrerIndexRef = doc(db, "referrals", referrerUid);
@@ -408,43 +415,21 @@ export const Onboarding = () => {
           const referrerDocSnap = await transaction.get(referrerUserRef);
           const referrerIndexSnap = await transaction.get(referrerIndexRef);
 
-          if (referrerDocSnap.exists()) {
-            const currentRefPoints =
-              referrerDocSnap.data().points?.referralPoints || 0;
-            const currentTotalPoints =
-              referrerDocSnap.data().points?.totalPoints || 0;
-
-            // Increment points for referrer (+100 points)
-            transaction.update(referrerUserRef, {
-              "points.referralPoints": currentRefPoints + 100,
-              "points.totalPoints": currentTotalPoints + 100,
-            });
+          if (!referrerDocSnap.exists()) {
+            throw new Error(
+              "Referrer user not found, unable to process referral",
+            );
           }
 
-          if (referrerIndexSnap.exists()) {
-            const currentUsedBy = referrerIndexSnap.data().usedBy || [];
-            const currentTotalEarned =
-              referrerIndexSnap.data().totalEarned || 0;
-
-            // Append referred user and increment logged total
-            transaction.update(referrerIndexRef, {
-              usedBy: [...currentUsedBy, activeUid],
-              totalEarned: currentTotalEarned + 100,
+          // If the referrer doesn't have a referrals index doc yet, create an
+          // empty one now. Actual point crediting happens after this transaction
+          // completes, as a separate step (Issue #636) — see below.
+          if (!referrerIndexSnap.exists()) {
+            transaction.set(referrerIndexRef, {
+              referralCode: referrerCodeClean,
+              usedBy: [],
+              totalEarned: 0,
             });
-          } else {
-            // Only create fallback if referrer user doc exists to prevent orphaned records
-            if (referrerDocSnap.exists()) {
-              transaction.set(referrerIndexRef, {
-                referralCode: referrerCodeClean,
-                usedBy: [activeUid],
-                totalEarned: 100,
-              });
-            } else {
-              // Referrer user no longer exists, fail the transaction
-              throw new Error(
-                "Referrer user not found, unable to process referral",
-              );
-            }
           }
         }
 
@@ -458,7 +443,45 @@ export const Onboarding = () => {
           totalEarned: 0,
         });
       });
+      // Credit the referrer now, as a separate step after my own account exists.
+      // Security rules check MY account's age/activity before allowing this —
+      // if my account looks like a same-day throwaway, it's silently rejected
+      // and the referrer just doesn't get credited.
+      if (referrerUid) {
+        try {
+          const referrerUserRef = doc(db, "users", referrerUid);
+          const referrerIndexRef = doc(db, "referrals", referrerUid);
 
+          await runTransaction(db, async (transaction) => {
+            const referrerDocSnap = await transaction.get(referrerUserRef);
+            const referrerIndexSnap = await transaction.get(referrerIndexRef);
+
+            if (!referrerDocSnap.exists() || !referrerIndexSnap.exists()) {
+              throw new Error("Referrer not found, skipping referral credit.");
+            }
+
+            const currentUsedBy = referrerIndexSnap.data().usedBy || [];
+            const currentTotalEarned =
+              referrerIndexSnap.data().totalEarned || 0;
+            const currentRefPoints =
+              referrerDocSnap.data().points?.referralPoints || 0;
+            const currentTotalPoints =
+              referrerDocSnap.data().points?.totalPoints || 0;
+
+            transaction.update(referrerIndexRef, {
+              usedBy: [...currentUsedBy, activeUid],
+              totalEarned: currentTotalEarned + 100,
+            });
+
+            transaction.update(referrerUserRef, {
+              "points.referralPoints": currentRefPoints + 100,
+              "points.totalPoints": currentTotalPoints + 100,
+            });
+          });
+        } catch (referralErr) {
+          console.warn("Referral credit was not applied:", referralErr.message);
+        }
+      }
       setSuccessMsg("Onboarding complete! Syncing dashboard...");
       setTimeout(() => {
         navigate("/dashboard");

@@ -135,7 +135,10 @@ export const AuthProvider = ({ children }) => {
           ).trim();
           const githubId = additionalInfo?.profile?.id || null;
           const avatar =
-            additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
+  additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
+const githubCreatedAt = additionalInfo?.profile?.created_at || null;
+const githubPublicRepos = additionalInfo?.profile?.public_repos ?? null;
+const githubFollowers = additionalInfo?.profile?.followers ?? null;
 
           const userDocRef = doc(db, "users", authUser.uid);
           const docSnap = await getDoc(userDocRef);
@@ -145,6 +148,12 @@ export const AuthProvider = ({ children }) => {
               uid: authUser.uid,
               githubUsername,
               githubId,
+              githubCreatedAt,
+              githubPublicRepos,
+              githubFollowers,
+              githubAccountAgeAtSignupDays: githubCreatedAt
+                  ? Math.floor((Date.now() - new Date(githubCreatedAt).getTime()) / (1000 * 60 * 60 * 24))
+                  : 0,
               name: authUser.displayName || githubUsername || "Developer",
               email: authUser.email || "",
               avatar,
