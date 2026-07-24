@@ -157,7 +157,9 @@ export class FirestoreBatchOptimizer {
 
     // Flush if batch is full
     if (this.batch.length >= this.maxBatchSize) {
-      this.flush();
+      this.flush().catch((err) => {
+        console.error("Batch flush failed:", err);
+      });
       return;
     }
 

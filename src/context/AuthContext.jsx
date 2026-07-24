@@ -81,7 +81,7 @@ const checkAndUpdateStreak = async (data, docRef) => {
         lastLogin: currentNow.toISOString(),
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints,
-        hubCoins: (data.hubCoins || 0) + 10
+        hubCoins: (latestData.hubCoins || 0) + 10
       });
     });
   } catch (err) {
