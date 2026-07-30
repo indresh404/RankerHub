@@ -5,9 +5,9 @@
  * and returns structured rate limit info.
  */
 export const parseRateLimitHeaders = (headers) => {
-  const remaining = parseInt(headers?.["x-ratelimit-remaining"] ?? -1);
-  const limit = parseInt(headers?.["x-ratelimit-limit"] ?? -1);
-  const resetTimestamp = parseInt(headers?.["x-ratelimit-reset"] ?? 0);
+  const remaining = parseInt(headers?.["x-ratelimit-remaining"] ?? -1, 10);
+  const limit = parseInt(headers?.["x-ratelimit-limit"] ?? -1, 10);
+  const resetTimestamp = parseInt(headers?.["x-ratelimit-reset"] ?? 0, 10);
 
   const resetDate = resetTimestamp ? new Date(resetTimestamp * 1000) : null;
   const resetInMs = resetDate ? resetDate.getTime() - Date.now() : 0;
