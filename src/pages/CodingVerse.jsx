@@ -808,9 +808,9 @@ export const CodingVerse = () => {
         if (todayUTCStr !== newLastCodingVerseSolveDate) {
           const lastDateParts = newLastCodingVerseSolveDate.split("-");
           const lastUTC = Date.UTC(
-            parseInt(lastDateParts[0]),
-            parseInt(lastDateParts[1]) - 1,
-            parseInt(lastDateParts[2]),
+            parseInt(lastDateParts[0], 10),
+            parseInt(lastDateParts[1], 10) - 1,
+            parseInt(lastDateParts[2], 10),
           );
           const diffDays = Math.floor(
             (todayUTC - lastUTC) / (1000 * 60 * 60 * 24),
