@@ -672,7 +672,7 @@ export const Onboarding = () => {
                     className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl divide-y divide-slate-100 dark:divide-slate-800"
                   >
                     {filteredColleges.length > 0 ? (
-                      filteredColleges.map((col) => (
+                      (filteredColleges ?? []).map((col) => (
                         <div
                           key={col}
                           onMouseDown={(e) => {
