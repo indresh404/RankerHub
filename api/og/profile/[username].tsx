@@ -57,7 +57,7 @@ export default function handler(req: Request) {
                 fontWeight: 700,
               }}
             >
-              {username.charAt(0).toUpperCase()}
+              {username[0].toUpperCase()}
             </div>
             <div>
               <div style={{ fontSize: 44, fontWeight: 700 }}>{username}</div>
