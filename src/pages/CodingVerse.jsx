@@ -85,7 +85,7 @@ function runJavaScript(code, timeoutMs = 2000) {
         const errors = [];
         const fakeconsole = {
           log: (...args) => logs.push((args ?? []).map(formatValue).join(" ")),
-          error: (...args) => errors.push(args.map(formatValue).join(" ")),
+          error: (...args) => errors.push((args ?? []).map(formatValue).join(" ")),
           warn: (...args) => logs.push("[WARN] " + args.map(formatValue).join(" ")),
           info: (...args) => logs.push("[INFO] " + args.map(formatValue).join(" ")),
         };
