@@ -49,7 +49,7 @@ export const Onboarding = () => {
   const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
   const [customCollege, setCustomCollege] = useState("");
   const filteredColleges = useMemo(() => {
-    if (collegeSearch.trim() === "") {
+    if (collegeSearch.trim().length === 0) {
       return collegesList;
     }
 
