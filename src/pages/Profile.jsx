@@ -153,7 +153,7 @@ export const Profile = () => {
   }, [isEditModalOpen, isEmbedModalOpen]);
 
   const filteredColleges = useMemo(() => {
-    if (collegeSearch.trim() === "" || collegeSearch === "Other") {
+    if (collegeSearch.trim().length === 0 || collegeSearch === "Other") {
       return collegesList;
     }
     const searchLower = collegeSearch.toLowerCase();
