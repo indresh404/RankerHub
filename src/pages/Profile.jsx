@@ -54,7 +54,7 @@ export const Profile = () => {
 
   // Utility to escape text for embedding in XML/SVG
   const escapeXml = (unsafe) => {
-    if (unsafe == null) return "";
+    if (unsafe === null) return "";
     return String(unsafe)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
