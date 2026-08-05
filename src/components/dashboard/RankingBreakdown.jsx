@@ -136,7 +136,7 @@ export const RankingBreakdown = ({ userData }) => {
         .slice(1)
         .map((p) => `L ${p.x} ${p.y}`)
         .join(" ");
-    const area = `${path} L ${points[points.length - 1].x} ${chartHeight - paddingY} L ${points[0].x} ${chartHeight - paddingY} Z`;
+    const area = `${path} L ${points.at(-1).x} ${chartHeight - paddingY} L ${points[0].x} ${chartHeight - paddingY} Z`;
 
     return {
       points,
