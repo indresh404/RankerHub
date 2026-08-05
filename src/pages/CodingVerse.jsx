@@ -1074,7 +1074,7 @@ export const CodingVerse = () => {
           .map((q) => {
             const isSolved = answeredQuestions.includes(q.id);
             const isAttempted = attemptedQuestions.includes(q.id);
-            const isWrong = wrongAnswers[q.id] === true;
+            const isWrong = wrongAnswers[q.id] ;
             const currentTypedVal = inputsState[q.id] || "";
             const currentAnsweredVal = answersState[q.id] || "";
             const isLiked = likedPosts[q.id] === true;
