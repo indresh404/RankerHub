@@ -480,7 +480,7 @@ export const CodingVerse = () => {
       type: "option",
       difficulty: "Hard",
       question: "Determine what this String comparison outputs:",
-      code: 'String s1 = "Java";\nString s2 = new String("Java");\nSystem.out.println(s1 == s2);',
+      code: 'String s1 = "Java";\nString s2 = new String("Java");\nSystem.out.println(s1 === s2);',
       options: ["true", "false", "Compilation Error", "Exception"],
       correctIndex: 1,
       explanation:

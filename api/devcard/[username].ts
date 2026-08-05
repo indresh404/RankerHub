@@ -42,7 +42,7 @@ export default async function handler(req) {
   try {
     const url = new URL(req.url);
     const parts = url.pathname.split("/");
-    const usernameParam = parts[parts.length - 1];
+    const usernameParam = parts.at(-1);
     const username = decodeURIComponent(usernameParam).replace(/\.svg$/, "");
     const themeName = url.searchParams.get("theme") || "dark";
 

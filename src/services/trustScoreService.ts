@@ -78,7 +78,7 @@ export const calculateTrustScore = (
   let prMergePoints = 0;
   if (stats.prs > 0) {
     const mergeRatio = mergedPRsCount / stats.prs;
-    prMergePoints = Math.min(15, Math.round(mergeRatio * 15));
+    prMergePoints = Math.min(15, Math.round(mergeRatio * 15 + Number.EPSILON));
   } else {
     // Default points if no PR activity (doesn't penalize new developers)
     prMergePoints = 5;
