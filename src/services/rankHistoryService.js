@@ -26,7 +26,7 @@ export const saveRankSnapshot = async (uid, rank, totalPoints, timezone) => {
   // Extract number from "#42" or similar
   const numericRank =
     typeof rank === "string" ? parseInt(rank.replace(/[^0-9]/g, ""), 10) : rank;
-  if (isNaN(numericRank)) return;
+  if (Number.isNaN(numericRank)) return;
 
   const timeZone = resolveTimezone(timezone);
   const todayStr = toLocalDateString(new Date(), timeZone);
